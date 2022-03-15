@@ -17,6 +17,12 @@ ms_district <- read_sav("raw_data/sadc_ms_2019_district.sav")
 # hs_district <- read_sav("raw_data/sadc_hs_2019_district.sav")
 # saveRDS(hs_district, "raw_data/hs_district.rds")
 
+# To get the high school data set into R I first downloaded the .sav document 
+# from the CDC and the SPSS syntax. I modified line 318 from the syntax because 
+# it exceded the number of characters allowed and it generated an error opening 
+# the data in SPSS. Once I had the data set in .sav I imported it into R, and 
+# saved it as an RDS to reduce the size of the file. 
+
 hs_district_df <- readRDS("raw_data/hs_district.rds")
 
 # This code tells R the design elements in the survey (PSU, Weights, Strata)
