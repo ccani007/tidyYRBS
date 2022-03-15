@@ -7,18 +7,19 @@
 
 ######  Setup  ################################################################
 
-library(survey)
 library(tidyverse)
 
 hs_district_df <- readRDS("data/hs_district.rds")
 
 
-###  Account for Weights  ###
+###  Account for Weights with survey::  ###
 # This code tells R the design elements in the survey (PSU, Weights, Strata). It
 #   should be used for analysis because ignoring the PSUs will tend to yield
 #   standard errors that are too small, leading to false positives when doing
 #   significance tests. See:
 # https://stats.oarc.ucla.edu/r/seminars/survey-data-analysis-with-r/
+
+library(survey)
 
 hs_weighted_ls <- svydesign(
 	id = ~PSU,
@@ -28,6 +29,14 @@ hs_weighted_ls <- svydesign(
 	survey.lonely.psu = "adjust",
 	data = hs_district_df
 )
+
+
+###  Account for Weights with srvyr::  ###
+# See:
+# https://cran.r-project.org/web/packages/srvyr/vignettes/srvyr-vs-survey.html
+
+install.packages("srvyr")
+library(srvyr)
 
 
 
