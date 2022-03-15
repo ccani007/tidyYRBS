@@ -8,8 +8,6 @@
 ######  Setup  ################################################################
 
 library(survey)
-library(janitor)
-library(table1)
 library(tidyverse)
 
 hs_district_df <- readRDS("data/hs_district.rds")
@@ -22,7 +20,7 @@ hs_district_df <- readRDS("data/hs_district.rds")
 #   significance tests. See:
 # https://stats.oarc.ucla.edu/r/seminars/survey-data-analysis-with-r/
 
-hs_weighted_df <- svydesign(
+hs_weighted_ls <- svydesign(
 	id = ~PSU,
 	weights = ~weight,
 	strata = ~stratum ,
@@ -32,18 +30,20 @@ hs_weighted_df <- svydesign(
 )
 
 
+
+######  Explore the Weighted Data  ############################################
 # This function will give me the number of PSUs per strata
 
-summary(hs_weighted_df)
+summary(hs_weighted_ls)
 
 # Now, checking descriptive statistics 
 
-svytable(~sex, design = hs_weighted_df)
-svytable(~age, design = hs_weighted_df)
-svytable(~year, design = hs_weighted_df)
-svytable(~q26, design = hs_weighted_df)
-svytable(~year + q26, design = hs_weighted_df)
-svytable(~sitename + q26, design = hs_weighted_df)
+svytable(~sex, design = hs_weighted_ls)
+svytable(~age, design = hs_weighted_ls)
+svytable(~year, design = hs_weighted_ls)
+svytable(~q26, design = hs_weighted_ls)
+svytable(~year + q26, design = hs_weighted_ls)
+svytable(~sitename + q26, design = hs_weighted_ls)
 
 
 

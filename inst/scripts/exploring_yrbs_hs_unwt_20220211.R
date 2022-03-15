@@ -7,9 +7,7 @@
 
 ######  Setup  ################################################################
 
-library(janitor)
 library(tidyverse)
-
 hs_district_df <- readRDS("data/hs_district.rds")
 
 
@@ -35,12 +33,12 @@ hs_district1_df <-
   hs_district_df %>% 
   mutate(sitename_original = sitename) %>% 
   select(sitename_original, sitename, everything()) %>% 
-  separate(sitename, c("city", "state"), sep = "\\,") %>% 
+  separate(sitename, c("district", "state"), sep = "\\,") %>% 
   separate(state, c("state", "abb"), sep = "\\(") %>% 
   mutate(abb = str_remove_all(abb, pattern = "\\)")) %>% 
-  mutate(city = str_to_lower(city)) %>%  
-  mutate(city = str_remove_all(city, pattern = "borough of ")) %>%
-  mutate(city = str_remove_all(city, pattern = " county"))
+  mutate(district = str_to_lower(district)) %>%  
+  mutate(district = str_remove_all(district, pattern = "borough of ")) %>%
+  mutate(district = str_remove_all(district, pattern = " county"))
 
 
 ###  Suicidality Metrics  ###
@@ -48,10 +46,18 @@ hs_district1_df <-
 #   recoded binary variables from 1-2 to 0-1, renamed sex variables and 
 #   corrected the type of vector of the sex and record variables.
 suicidalityCols_char <- c(
-	"state", "city", "year", "weight", "stratum", "PSU", "record", "age", "sex", 
-	"q26", "q27", "q28", "q29"
+	"state", "district", "year", "weight", "stratum", "PSU", "record", "age",
+	"sex", "q26", "q27", "q28", "q29"
 )
 
+
+# I converted question 28 to a numeric variable assuming the worst case scenario
+#   Therefore, if a participant selected 3, that means "2 to 3 attempts", the value
+#   is interpreted as 3, if he/she selected 4 that means" 4 to 5 times" the value will 
+#   be 5. For question 29, I converted it into a binary variable, so when a participant
+#   selects option 1 that is "I did not attempt suicide during the past 12 months"
+#   then I do not care about that answer and set it to be an NA, then I assign a value
+#   of 1 if they attempted suicide and 0 if they did not. 
 suicide_df <- 
   hs_district1_df %>% 
   select(all_of(suicidalityCols_char)) %>% 
@@ -108,77 +114,19 @@ suicide_df <-
         
 
 
-#### YRBS organized by city and year so that they are the experimental unit ###
+######  YRBS by City and Year  ################################################
 
-# I converted question 28 to a numeric variable assuming the worst case scenario
-#   Therefore, if a participant selected 3, that means "2 to 3 attempts", the value
-#   is interpreted as 3, if he/she selected 4 that means" 4 to 5 times" the value will 
-#   be 5. For question 29, I converted it into a binary variable, so when a participant
-#   selects option 1 that is "I did not attempt suicide during the past 12 months"
-#   then I do not care about that answer and set it to be an NA, then I assign a value
-#   of 1 if they attempted suicide and 0 if they did not. 
-
-MyYRBS_df <- 
+# We want the city and year to be the experimental unit
+yrbs_city_summary_df <- 
   suicide_df %>% 
-  mutate(q28N = case_when(
-            q28 == 1 ~ "0", 
-            q28 == 2 ~ "1", 
-            q28 == 3 ~ "3", 
-            q28 == 4 ~ "5", 
-            q28 == 5 ~ "6",
-            TRUE ~ NA_character_ )
-  ) %>% 
-  mutate(q28N = as.numeric(q28N)) %>% 
-  mutate(q29B = case_when(
-            q29 == 1 ~ NA_character_, 
-            q29 == 2 ~ "1",
-            q29 == 3 ~ "0",
-            TRUE ~ NA_character_)
-  ) %>% 
-  mutate(q29B = as.numeric(q29B)) %>% 
-  select(state, city, year, q26, q27, q28N, q29B) %>% 
-  group_by(year, city) %>%
-  summarise(sumq26 = sum(q26, na.rm = TRUE), 
-            sumq27 = sum(q27, na.rm = TRUE), 
-            sumq29B = sum(q29B, na.rm = TRUE),
-            mean28N = mean(q28N, na.rm = TRUE), .groups = "keep")
+  group_by(year, district) %>%
+  summarise(
+  	nConsidered = sum(suicide_considered, na.rm = TRUE), 
+    nPlanned    = sum(suicide_planned, na.rm = TRUE), 
+    aveAttempts = mean(suicide_attempts, na.rm = TRUE),
+    nInjured    = sum(suicide_injury, na.rm = TRUE),
+    .groups = "keep"
+  )
   
- 
-# Tables for each item of suicidality 
-
-considered <- 
-  suicide_df %>% 
-  tabyl(year, `Seriously consider attempting suicide`) %>% 
-  adorn_percentages("row") %>%
-  adorn_pct_formatting(digits = 2) %>%
-  adorn_ns()
-
-considered
-
-plan <- suicide_df %>% 
-  tabyl(year, `Made a suicide plan`) %>% 
-  adorn_percentages("row") %>%
-  adorn_pct_formatting(digits = 2) %>%
-  adorn_ns()
-
-plan 
-
-attempt <- suicide_df %>% 
-  tabyl(year, `Attempted suicide`) %>% 
-  adorn_percentages("row") %>%
-  adorn_pct_formatting(digits = 2) %>%
-  adorn_ns()
-
-attempt
-
-injury <- suicide_df %>% 
-  tabyl(year, `Attempted suicide`) %>% 
-  adorn_percentages("row") %>%
-  adorn_pct_formatting(digits = 2) %>%
-  adorn_ns()
-
-injury
-
-
-
-
+# We are able to explore the data, but not analyse because this data is 
+#   unweighted. See "inst/scripts/exploring_yrbs_hs_wt_20220211.R"
