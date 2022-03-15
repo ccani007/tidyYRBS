@@ -1,6 +1,7 @@
 # Exploring the YRBS
 # Gabriel Odom and Catalina Cañizares
 # 02/14/2022
+# Updates 03/15/2022
 
 # install.packages("haven")
 library(haven)
@@ -114,12 +115,12 @@ suicide_df<-
 #### YRBS organized by city and year so that they are the experimental unit ###
 
 # I converted question 28 to a numeric variable assuming the worst case scenario
-## Therefore, if a participant selected 3, that means 2 to 3 attempts, the value
-## is interpreted as 3, if he selected 4 that means 4 to 5 times the value will 
+## Therefore, if a participant selected 3, that means "2 to 3 attempts", the value
+## is interpreted as 3, if he/she selected 4 that means" 4 to 5 times" the value will 
 ## be 5. For question 29, I converted it into a binary variable, so when a participant
 ## selects option 1 that is "I did not attempt suicide during the past 12 months"
 ## then I do not care about that answer and set it to be an NA, then I assign a value
-## of 1 if thet attempted suicide and 0 if they did not. 
+## of 1 if they attempted suicide and 0 if they did not. 
 
 MyYRBS_df <- 
   suicide_df %>% 
@@ -141,13 +142,14 @@ MyYRBS_df <-
   ) %>% 
   mutate(q29B = as.numeric(q29B)
   ) %>% 
-  select(city, year, q26, q27, q28N, q29B
+  select(state, city, year, q26, q27, q28N, q29B
   ) %>% 
-  group_by(year
+  group_by(year, city
   ) %>%
-  summarise(suma = sum(q26), na.rm = TRUE)
-  
-
+  summarise(sumq26 = sum(q26, na.rm = TRUE), 
+            sumq27 = sum(q27, na.rm = TRUE), 
+            sumq29B = sum(q29B, na.rm = TRUE),
+            mean28N = mean(q28N, na.rm = TRUE), .groups = "keep")
   
   
 table1::table1(~ q26 | city, data = MyYRBS_df)
