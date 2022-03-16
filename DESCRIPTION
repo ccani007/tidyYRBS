@@ -1,12 +1,28 @@
 Package: tidyYRBS
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Tidy High School District YRBS data to be easily joined to other sets 
+       by District and year.
+Version: 0.0.0.9001
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    c(person(given  = "Gabriel",
+             family = "Odom", 
+             email = "godom@fiu.edu", 
+             role = c("aut", "cre"),
+             comment = c(ORCID = "0000-0002-9856-5901")),
+      person(given  = "Catalina",
+             family = "Cañizares", 
+             email = "ccani007@fiu.edu", 
+             role = c("aut", "cre"),
+             comment = c(ORCID = " 0000-0002-6854-5205"))
+             )
+Description: 
+     Pre-processed data and helper functions to analyze risky behaviors in 
+     adolescets from the YRBS High School District Dataset in R. Also, it 
+     allows to easily merge the the YRBS High School District Dataset to other 
+     data sets that contain District and year information in the U.S.
+License: `use_mit_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
+Depends: 
+    R (>= 2.10)
+LazyData: false
