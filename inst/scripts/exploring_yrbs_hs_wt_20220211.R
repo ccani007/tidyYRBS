@@ -8,8 +8,9 @@
 ######  Setup  ################################################################
 
 library(tidyverse)
+library(tidyYRBS)
 
-hs_district_df <- load("data/hs_district.rda")
+data("hs_district")
 
 
 ###  Account for Weights with survey::  ###
@@ -21,7 +22,7 @@ hs_district_df <- load("data/hs_district.rda")
 
 library(survey)
 
-?svydesign
+# ?svydesign
 
 hs_weighted_ls <- svydesign(
 	id = ~PSU,
@@ -29,7 +30,7 @@ hs_weighted_ls <- svydesign(
 	strata = ~stratum ,
 	nest = TRUE,
 	survey.lonely.psu = "adjust",
-	data = hs_district_df
+	data = hs_district
 )
 
 
@@ -47,7 +48,7 @@ library(srvyr)
 
 summary(hs_weighted_ls)
 
-# Now, checking descriptive statistics 
+# Now, checking descriptive statistics
 
 svytable(~sex, design = hs_weighted_ls)
 svytable(~age, design = hs_weighted_ls)

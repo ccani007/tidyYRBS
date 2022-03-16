@@ -1,18 +1,31 @@
 Package: tidyYRBS
 Title: Tidy High School District YRBS data to be easily joined to other sets 
        by District and year
-Version: 0.0.0.9001
+Version: 0.0.0.9002
 Authors@R: 
-    c(person(given  = "Catalina",
-             family = "Cañizares", 
-             email = "ccani007@fiu.edu", 
-             role = c("aut", "cre"),
-             comment = c(ORCID = " 0000-0002-6854-5205"))
-      person(given  = "Gabriel",
-             family = "Odom", 
-             email = "godom@fiu.edu", 
-             role = c("aut"),
-             comment = c(ORCID = "0000-0002-9856-5901")),
+    c(
+      person(
+        given  = "Catalina",
+        family = "Cañizares", 
+        email = "ccani007@fiu.edu", 
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0002-6854-5205")
+      ),
+      person(
+        given  = "Mark",
+        family = "MacGowan", 
+        email = "macgowan@fiu.edu", 
+        role = "aut",
+        comment = c(ORCID = "0000-0002-8505-5515")
+      ),
+      person(
+        given  = "Gabriel",
+        family = "Odom", 
+        email = "godom@fiu.edu", 
+        role = "aut",
+        comment = c(ORCID = "0000-0002-9856-5901")
+      )
+    )
 Description: 
      Pre-processed data and helper functions to analyze risky behaviors in 
      adolescets from the YRBS High School District Dataset in R. Also, it 
@@ -23,5 +36,5 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Depends: 
-    R (>= 2.10)
+    R (>= 3.1)
 LazyData: false
