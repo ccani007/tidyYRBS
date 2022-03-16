@@ -19,5 +19,6 @@ ms_state_a_m <- read_sav("inst/extData/sadc_ms_2019_state_a_m.sav")
 ms_state_n_z <- read_sav("inst/extData/sadc_ms_2019_state_n_z.sav")
 
 hs_district <- read_sav("inst/extData/sadc_hs_2019_district.sav")
-saveRDS(hs_district, "data/hs_district.rds")
+usethis::use_data(hs_district)
+# saveRDS(hs_district, "data/hs_district.rds")
 

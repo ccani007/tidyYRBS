@@ -9,7 +9,7 @@
 
 library(tidyverse)
 
-hs_district_df <- readRDS("data/hs_district.rds")
+hs_district_df <- load("data/hs_district.rda")
 
 
 ###  Account for Weights with survey::  ###
@@ -20,6 +20,8 @@ hs_district_df <- readRDS("data/hs_district.rds")
 # https://stats.oarc.ucla.edu/r/seminars/survey-data-analysis-with-r/
 
 library(survey)
+
+?svydesign
 
 hs_weighted_ls <- svydesign(
 	id = ~PSU,
