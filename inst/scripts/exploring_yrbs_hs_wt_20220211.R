@@ -10,7 +10,7 @@
 library(tidyverse)
 library(tidyYRBS)
 
-data("hs_district")
+data("hs_suicide")
 
 
 ###  Account for Weights with survey::  ###
@@ -24,22 +24,14 @@ library(survey)
 
 # ?svydesign
 
-hs_weighted_ls <- svydesign(
+hs_weighted_ls <- survey::svydesign(
 	id = ~PSU,
 	weights = ~weight,
 	strata = ~stratum ,
 	nest = TRUE,
 	survey.lonely.psu = "adjust",
-	data = hs_district
+	data = hs_suicide
 )
-
-
-###  Account for Weights with srvyr::  ###
-# See:
-# https://cran.r-project.org/web/packages/srvyr/vignettes/srvyr-vs-survey.html
-
-install.packages("srvyr")
-library(srvyr)
 
 
 
@@ -50,12 +42,12 @@ summary(hs_weighted_ls)
 
 # Now, checking descriptive statistics
 
-svytable(~sex, design = hs_weighted_ls)
-svytable(~age, design = hs_weighted_ls)
-svytable(~year, design = hs_weighted_ls)
-svytable(~q26, design = hs_weighted_ls)
-svytable(~year + q26, design = hs_weighted_ls)
-svytable(~sitename + q26, design = hs_weighted_ls)
+survey::svytable(~Sex, design = hs_weighted_ls)
+survey::svytable(~Grade, design = hs_weighted_ls)
+survey::svytable(~year, design = hs_weighted_ls)
+survey::svytable(~suicide_considered, design = hs_weighted_ls)
+survey::svytable(~year + suicide_considered, design = hs_weighted_ls)
+survey::svytable(~district + suicide_considered, design = hs_weighted_ls)
 
 
 

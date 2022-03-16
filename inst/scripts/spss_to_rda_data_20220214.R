@@ -52,6 +52,8 @@ usethis::use_data(hs_district, overwrite = TRUE)
 
 ######  Suicide-Specific Subset  ##############################################
 
+data("hs_district", package = "tidyYRBS")
+
 ###  Suicidality Metrics  ###
 # Generated a new data set that includes variables related to suicidality,
 #   recoded binary variables from 1-2 to 0-1, renamed sex variables and
@@ -153,7 +155,8 @@ hs_suicide <-
 	mutate(
 		suicide_injury = case_when(
 			q29 == 2 ~ TRUE,
-			q26 == 3 ~ FALSE,
+			q29 == 3 ~ FALSE,
+			q29 == 1 ~ FALSE,
 			TRUE ~ NA
 		)
 	) %>%
