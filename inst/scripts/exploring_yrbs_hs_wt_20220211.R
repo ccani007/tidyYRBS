@@ -10,8 +10,10 @@
 library(tidyverse)
 library(tidyYRBS)
 
+data("hs_demographics")
 data("hs_suicide")
 
+hsSuicide_df <- left_join(hs_demographics, hs_suicide, by = "record")
 
 ###  Account for Weights with survey::  ###
 # This code tells R the design elements in the survey (PSU, Weights, Strata). It
@@ -30,7 +32,7 @@ hs_weighted_ls <- survey::svydesign(
 	strata = ~stratum ,
 	nest = TRUE,
 	survey.lonely.psu = "adjust",
-	data = hs_suicide
+	data = hsSuicide_df
 )
 
 
@@ -48,6 +50,4 @@ survey::svytable(~year, design = hs_weighted_ls)
 survey::svytable(~suicide_considered, design = hs_weighted_ls)
 survey::svytable(~year + suicide_considered, design = hs_weighted_ls)
 survey::svytable(~district + suicide_considered, design = hs_weighted_ls)
-
-
 

@@ -26,13 +26,17 @@ table(hs_district$sitename, hs_district$year)
 
 ######  YRBS by City and Year  ################################################
 
+data("hs_demographics")
 data("hs_suicide")
+
+hsSuicide_df <- left_join(hs_demographics, hs_suicide, by = "record")
 
 # We want the city and year to be the experimental unit
 yrbs_city_summary_df <-
-  suicide_df %>%
+	hsSuicide_df %>%
   group_by(year, district) %>%
   summarise(
+  	nHopeless   = sum(is_hopeless, na.rm = TRUE),
   	nConsidered = sum(suicide_considered, na.rm = TRUE),
     nPlanned    = sum(suicide_planned, na.rm = TRUE),
     aveAttempts = mean(suicide_attempts, na.rm = TRUE),
