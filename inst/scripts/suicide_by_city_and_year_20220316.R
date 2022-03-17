@@ -64,5 +64,12 @@ citySuicidality_df %>%
 	  theme(legend.position = "none") +
 	  aes(x = year, y = propConsidered, group = district) +
 	  scale_y_continuous(limits = c(0, 0.3)) +
+	  labs(
+	  	title = "YRBSS High School Student Suicidal Ideation in South Florida",
+	  	subtitle = "Question Q26 Survey Weighted Average",
+	  	y = "Proportion of HS Students who Considered Suicide",
+	  	x = "Years: 1991 - 2019",
+	  	caption = "Teal: Miami-Dade, Gold: Broward, Blue: Palm Beach, Grey: Other US Cities"
+	  ) +
 	  geom_point(alpha = 0.25) +
 	  geom_line(aes(alpha = SFL, colour = district), size = 1.1)
