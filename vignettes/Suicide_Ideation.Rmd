@@ -1,0 +1,675 @@
+---
+title: "Suicide Ideation in Adolescents: Risky Behaviors, Traumatic Events, and Hopelessness as Risk Factors"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Suicide Ideation in Adolescents: Risky Behaviors, Traumatic Events, and Hopelessness as Risk Factors}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = TRUE,
+	warning = TRUE
+)
+```
+
+```{r tidyverse, include=FALSE, message=FALSE}
+library(conflicted)
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("lag", "dplyr", quiet = TRUE)
+suppressPackageStartupMessages(library(tidyverse))
+
+# suppress "`summarise()` has grouped output by " messages
+options(dplyr.summarise.inform=F)  
+```
+
+```{r tidymodels, include=FALSE}
+suppressPackageStartupMessages(library(tidymodels))
+tidymodels_prefer()
+suppressMessages(conflict_prefer("spec", "yardstick"))
+```
+
+```{r setup-packages, include=FALSE}
+library(tidyYRBS)
+library(srvyr)
+library(survey)
+
+```
+
+```{r loading-data, include=FALSE}
+data("hs_district")
+data("hs_demographics")
+data("hs_suicide")
+
+```
+
+
+```{r wragle, include =FALSE}
+# hsSuicide_df has clean demographics and suicide data 
+hsSuicide_df <- left_join(hs_demographics, hs_suicide, by = "record")
+
+# To add it to the other variables I need for the model, I have to recode 
+#  the record vector from dbl to chr in the original data 
+hs_district <- 
+  hs_district %>% 
+  mutate(record = as.character(record))
+
+# Created an object that contains the variables I need for the analysis
+V_interest <- c("record", "state.x", "district.x", "year.x", "weight.x",
+                "stratum.x", "PSU.x", "Sex", "Grade", "Race", 
+                "q16", "q17","q22", "suicide_considered", "is_hopeless",
+                "q19", "q41", "q51", "q57", "qhallucdrug", "q67", "q78")
+
+analysis <- 
+  hsSuicide_df %>% 
+  left_join(hs_district, by = "record") %>% 
+  filter(year.x >= 2003) %>% 
+  mutate(across
+         (c(q26, q16, q17, q22, q19, q41, q51, q57, qhallucdrug, q67, q78
+            ),factor
+          )
+         ) %>% 
+  mutate(across(c(q19, q57, q26), RecodeTF )) %>% 
+  mutate(across(c(q51,qhallucdrug), ScalingToBinary40)) %>% 
+  mutate(across(q16:q17, ScalingToBinary12)) %>% 
+  mutate(q41 = ScalingToBinary30(q41)) %>% 
+  mutate(
+    q22 = case_when(
+      q22 == 1 ~ FALSE,
+      q22 == 2 ~ FALSE,
+      q22 %in% 3:6 ~ TRUE,
+      TRUE ~ NA
+    )
+  ) %>% 
+  mutate(
+    q67 = case_when(
+      q67 == 1 ~ "Very underweight", 
+      q67 == 2 ~ "Slightly underweight", 
+      q67 == 3 ~ "About the right weight", 
+      q67 == 4 ~ "Slightly overweight", 
+      q67 == 5 ~ "Very overweight"
+    )
+  ) %>% 
+  mutate(
+    q78 = case_when(
+      q78 == 1 ~ FALSE,
+      q78 %in% 2:8 ~ TRUE,
+      TRUE ~ NA
+    )
+  ) %>% 
+ select(all_of(V_interest)) %>% 
+ rename(
+    Sate                = state.x, 
+    District            = district.x, 
+    Year                = year.x, 
+    weight              = weight.x, 
+    stratum             = stratum.x, 
+    PSU                 = PSU.x, 
+    injured_weapon      = q16, 
+    physical_fight      = q17, 
+    hurt_partner        = q22, 
+    forced_sexual       = q19, 
+    consumed_alcohol    = q41, 
+    consumed_chemical   = q51, 
+    offered_drugs       = q57, 
+    used_hallucinogenic = qhallucdrug, 
+    describe_weight     = q67, 
+    physicall_activty   = q78
+ )
+
+```
+
+
+# Background
+Suicidal thoughts among youth are a major public health concern in the United States of America. Nationwide, between 2009 and 2019, significant increases in the prevalence of adolescents who seriously considered attempting suicide (13.8% to 18.8%) were evidenced. Previous studies have revealed that risk factors can be classified into sociodemographic factors (age, gender, race); environmental factors (lack of social and familial support, socioeconomic status); and psychological factors (history of mental health disorders), however consideration of specific individual characteristics such as risky behaviors, traumatic events, and feelings of hopelessness are not widely evaluated in research, although they may trigger suicidal ideation. Therefore, this study aims to replicate a model proposed in 2005 that considered individual factors, behavioral factors, and exposure to traumatic events to prove if they are still current predictors of suicide ideation in U.S high school students. 
+
+# Method
+The data used to conduct the analysis comes from the Youth Risk Behavioral Surveillance System (YRBS) combined data set. The study was conducted using logistic regression with data from the surveys collected between 2003 and 2019, considering that the previous model was fitted into data from 2001. The analysis considered the sample weights, so over 11 million observations were included. 
+
+
+```{r exploting, include=FALSE}
+analysis_srv <-
+  analysis %>%
+  srvyr::as_survey_design(
+    ids     = PSU,
+    weights = weight,
+    strata  = stratum,
+    nest    = TRUE
+  )
+
+
+analysis_srv %>% 
+  group_by(Sex) %>%
+  summarise(N = survey_total())
+# Total people: 5576618 (F) + 5603872(M) + 81604 (NA) = 112620946 total
+
+analysis_srv %>% 
+  group_by(suicide_considered) %>%
+  summarise(proportion = survey_mean(),
+            total = survey_total())
+# True: 1573276 (14%) | False: 9495202 (84%) | NA: 193615 (1.7%) 
+
+proportions_df <-
+  analysis_srv %>%
+  group_by(Year, Sex) %>%
+  summarise(
+    propHopeless   = survey_mean(is_hopeless, na.rm = TRUE),
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE),
+    propSexAbuse = survey_mean(forced_sexual, na.rm = TRUE),
+    propDrug = survey_mean(offered_drugs, na.rm = TRUE), 
+    .groups = "keep"
+  ) 
+
+
+
+```
+
+```{r plots, include=FALSE}
+
+# Sexually abused 
+proportions_by_abused_df <-
+  analysis_srv %>%
+  group_by(Year, forced_sexual) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE),
+    .groups = "keep"
+  )  %>% 
+  mutate(Year = as.character(Year)) %>% 
+  drop_na()
+
+considered_abuse <-  
+  ggplot (proportions_by_abused_df, aes(x = forced_sexual, y = propConsidered)) +
+      labs(
+      title = "Suicidal Ideation Related to Sexual Abuse",
+       y = "Proportion Suicide Ideation",
+       x =  "Victim of sexual abuse"
+     ) +
+    theme_minimal() +
+    geom_boxplot()
+
+year_abused <-   
+  ggplot(proportions_by_abused_df) +
+  theme_bw() + 
+  aes(x = Year, y = propConsidered, group = forced_sexual) +
+  scale_y_continuous(limits = c(0, 0.6)) +
+  labs(
+    title = "Suicidal Ideation Related to Sexual Abuse",
+    y = "Proportion Suicide Ideation",
+    x = "Years: 2003 - 2019"
+  ) +
+  geom_point(alpha = 0.25) +
+  geom_line(aes(colour = forced_sexual), size = 1.1)
+
+
+# Feeling hopeless
+
+proportions_by_hopeless_df <-
+  analysis_srv %>%
+  group_by(Year, is_hopeless) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  ) %>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_hopeless <-  
+  ggplot (proportions_by_hopeless_df, aes(x = is_hopeless, y = propConsidered)) +
+  labs(
+    title = "Suicide Ideation Related to Hopelessness",
+    y = "Proportion Suicide Ideation",
+    x =  "Feeling sad or hopeless almost every day"
+  ) +
+  theme_minimal() +
+  geom_boxplot()
+
+year_hopeless <- 
+  ggplot(proportions_by_hopeless_df) +
+    theme_bw() + 
+    aes(x = Year, y = propConsidered, group = is_hopeless) +
+    scale_y_continuous(limits = c(0, 0.5)) +
+    labs(
+      title = "Suicidal Ideation Related to Hopelessness",
+      y = "Proportion Suicide Ideation",
+      x = "Years: 2003 - 2019"
+    ) +
+    geom_point(alpha = 0.5) +
+    geom_line(aes(colour = is_hopeless), size = 1.1)
+
+# Offered drugs in school property 
+
+proportions_by_drug_df <-
+  analysis_srv %>%
+  group_by(Year, offered_drugs) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_drugs <-  
+  ggplot (proportions_by_drug_df, aes(x = offered_drugs, y = propConsidered)) +
+    labs(
+      title = "Suicidal Ideation Related to drugs in school",
+      y = "Proportion Suicide Ideation",
+      x =  "Illegal drug on school property?"
+   ) +
+  theme_minimal() +
+  geom_boxplot()
+
+
+year_drug <- 
+  ggplot(proportions_by_drug_df) +
+  theme_bw() + 
+  aes(x = Year, y = propConsidered, group = offered_drugs) +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  labs(
+    title = "Suicidal Ideation Related to  drugs",
+    y = "Proportion Suicide Ideation",
+    x = "Years: 2003 - 2019"
+  ) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(colour = offered_drugs), size = 1.1)
+
+# Threatened or injured with a weapon
+
+proportions_by_injured_df <-
+  analysis_srv %>%
+  group_by(Year, injured_weapon) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_injured <-  
+  ggplot (proportions_by_injured_df, aes(x = injured_weapon, y = propConsidered)) +
+    labs(
+      title = "Suicidal Ideation Related to Being Injured by a Weapon",
+      y = "Proportion Suicide Ideation",
+      x =  "Injured by weapon on school property"
+   ) +
+    theme_minimal() +
+    geom_boxplot()
+
+
+year_injured<- 
+  ggplot(proportions_by_injured_df) +
+  theme_bw() + 
+  aes(x = Year, y = propConsidered, group = injured_weapon) +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  labs(
+    title = "Suicidal Ideation Related to Injured by a Weapon",
+    y = "Proportion Suicide Ideation",
+    x = "Years: 2003 - 2019"
+  ) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(colour = injured_weapon), size = 1.1)
+
+# CHECK
+table(analysis$Year, analysis$injured_weapon)
+
+
+# Physical fight
+
+proportions_by_fight_df <-
+  analysis_srv %>%
+  group_by(Year, physical_fight) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_fight <-  
+  ggplot (proportions_by_fight_df, aes(x = physical_fight, y = propConsidered)) +
+    labs(
+     title = "Suicidal Ideation Related to Physical Fight",
+     y = "Proportion Suicide Ideation",
+     x =  "Engaged on Physical fights"
+  ) +
+   theme_minimal() +
+   geom_boxplot()
+
+
+year_injured<- 
+  ggplot(proportions_by_fight_df) +
+  theme_bw() + 
+  aes(x = Year, y = propConsidered, group = physical_fight) +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  labs(
+    title = "Suicidal Ideation Related to Physical Fight",
+    y = "Proportion Suicide Ideation",
+    x = "Years: 2003 - 2019"
+  ) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(colour = physical_fight), size = 1.1)
+
+
+# Hurt by partner
+
+proportions_by_partner_df <-
+  analysis_srv %>%
+  group_by(Year, hurt_partner) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_partner <-  
+  ggplot (proportions_by_partner_df, aes(x = hurt_partner, y = propConsidered)) +
+   labs(
+     title = "Suicidal Ideation Related to partner violence",
+     y = "Proportion Suicide Ideation",
+     x =  "Physically Hurt by Partner"
+   ) +
+   theme_minimal() +
+   geom_boxplot()
+
+
+year_injured<- 
+  ggplot(proportions_by_partner_df) +
+  theme_bw() + 
+  aes(x = Year, y = propConsidered, group = hurt_partner) +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  labs(
+    title = "Suicidal Ideation Related to partner violence",
+    y = "Proportion Suicide Ideation",
+    x = "Years: 2003 - 2019"
+  ) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(colour = hurt_partner), size = 1.1)
+
+
+# Consumed alcohol 
+
+proportions_by_alcohol_df <-
+  analysis_srv %>%
+  group_by(Year, consumed_alcohol) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_alcohol <-  
+  ggplot (proportions_by_alcohol_df, aes(x = consumed_alcohol, y = propConsidered)) +
+    labs(
+      title = "Suicidal Ideation Related to Alcohol Consuming",
+      y = "Proportion Suicide Ideation",
+      x =  "Alcohol consming in the past 30 days"
+   ) +
+   theme_minimal() +
+   geom_boxplot()
+
+
+year_alcohol<- 
+  ggplot(proportions_by_alcohol_df) +
+  theme_bw() + 
+  aes(x = Year, y = propConsidered, group = consumed_alcohol) +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  labs(
+    title = "Suicidal Ideation Related to Alcohol Consuming ",
+    y = "Proportion Suicide Ideation",
+    x = "Years: 2003 - 2019"
+  ) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(colour = consumed_alcohol), size = 1.1)
+
+# Consumed chemical 
+
+proportions_by_chemical_df <-
+  analysis_srv %>%
+  group_by(Year, consumed_chemical) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_chemical <-  
+  ggplot (proportions_by_chemical_df, aes(x = consumed_chemical, y = propConsidered)) +
+    labs(
+      title = "Suicidal Ideation Related to chemical inhalation",
+      y = "Proportion Suicide Ideation",
+      x =  "Inhalation of Chemichals"
+    ) +
+   theme_minimal() +
+   geom_boxplot()
+
+
+year_chemical<- 
+  ggplot(proportions_by_chemical_df) +
+   theme_bw() + 
+   aes(x = Year, y = propConsidered, group = consumed_chemical) +
+   scale_y_continuous(limits = c(0, 0.3)) +
+   labs(
+     title = "Suicidal Ideation Related to chemical inhalation",
+     y = "Proportion Suicide Ideation",
+     x = "Years: 2003 - 2019"
+   ) +
+   geom_point(alpha = 0.5) +
+   geom_line(aes(colour = consumed_chemical), size = 1.1)
+
+
+# Used hallicinogenic
+
+proportions_by_hallu_df <-
+  analysis_srv %>%
+  group_by(Year, used_hallucinogenic) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_halu <-  
+  ggplot (proportions_by_hallu_df, aes(x = used_hallucinogenic, y = propConsidered)) +
+    labs(
+      title = "Suicidal Ideation Related to hallucinogenic drugs",
+      y = "Proportion Suicide Ideation",
+      x =  "Hallucinogenic Drugs Use"
+   ) +
+   theme_minimal() +
+   geom_boxplot()
+
+
+year_halu<- 
+  ggplot(proportions_by_hallu_df) +
+    theme_bw() + 
+    aes(x = Year, y = propConsidered, group = used_hallucinogenic) +
+    scale_y_continuous(limits = c(0, 0.3)) +
+    labs(
+      title = "Suicidal Ideation Related to Hallucinogenic Drugs Use ",
+      y = "Proportion Suicide Ideation",
+      x = "Years: 2003 - 2019"
+    ) +
+   geom_point(alpha = 0.5) +
+   geom_line(aes(colour = used_hallucinogenic), size = 1.1)
+
+
+# describe_weight
+
+proportions_by_weight_df <-
+  analysis_srv %>%
+  group_by(Year, describe_weight) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+considered_weight <-  
+  ggplot (proportions_by_weight_df, aes(x = describe_weight, y = propConsidered)) +
+    labs(
+      title = "Suicidal Ideation Related to Weigth",
+      y = "Proportion Suicide Ideation",
+      x =  "Description of Weight"
+   ) +
+   theme_minimal() +
+   geom_boxplot()
+
+
+year_weight<- 
+  ggplot(proportions_by_weight_df) +
+  theme_bw() + 
+  aes(x = Year, y = propConsidered, group = describe_weight) +
+  scale_y_continuous(limits = c(0, 0.3)) +
+  labs(
+    title = "Suicidal Ideation Related to Weigth",
+    y = "Proportion Suicide Ideation",
+    x = "Years: 2003 - 2019"
+  ) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(colour = describe_weight), size = 1.1)
+
+# I want to see all the predictors and the outcome by year
+proportions_every_predictor_df <-
+  analysis_srv %>%
+  group_by(Year) %>%
+  summarise(
+    propConsidered = survey_mean(suicide_considered, na.rm = TRUE), 
+    prppAlcohol = survey_mean(consumed_alcohol, na.rm = TRUE), 
+    propHopeless   = survey_mean(is_hopeless, na.rm = TRUE),
+    propSexAbuse = survey_mean(forced_sexual, na.rm = TRUE),
+    propDrug = survey_mean(offered_drugs, na.rm = TRUE),
+    propWeapon = survey_mean(injured_weapon, na.rm = TRUE), 
+    propFight = survey_mean(physical_fight, na.rm = TRUE), 
+    propPartner = survey_mean(hurt_partner, na.rm = TRUE), 
+    porpChemical = survey_mean(consumed_chemical, na.rm = TRUE), 
+    porpHallucinogenic = survey_mean(used_hallucinogenic, na.rm = TRUE),
+    porpPhysicall = survey_mean(physicall_activty, na.rm = TRUE),
+    .groups = "keep"
+  )%>% 
+  mutate(Year = as.character(Year)) %>% 
+  na.omit()
+
+proportions_every_predictor <- 
+  proportions_every_predictor_df %>% 
+  select(-contains("_se")) %>%
+  filter(Year > 2003) %>% 
+  pivot_longer(-Year) %>% 
+  ggplot(.) +
+  theme_bw() +
+  geom_line(aes(Year, value, group=name, color=name))
+```
+
+After exploring the data, it is relevant to confirm if the predictors that are included in the original model in fact have a relation with suicide ideation. The following plots confirm that all the predictor are related to the outcome. Some examples will be displayed:
+
+```{r plots to show, echo=FALSE}
+
+proportions_every_predictor
+considered_hopeless
+considered_abuse
+
+```
+
+# Results
+```{r logistic-model-overall, include=FALSE}
+
+# For the logistic regression I was not able to understand how the srvyr behaves.
+# Therefore, I will use the survey package, based on this training: 
+  # https://stats.oarc.ucla.edu/r/seminars/survey-data-analysis-with-r/
+
+analysis_weighted_ls <- survey::svydesign(
+  id = ~PSU,
+  weights = ~weight,
+  strata = ~stratum ,
+  nest = TRUE,
+  survey.lonely.psu = "adjust",
+  data = analysis
+)
+
+# The model
+model_1 <- (svyglm(suicide_considered ~ Sex + Grade + Race + injured_weapon +
+                  physical_fight + hurt_partner + is_hopeless + 
+                    forced_sexual + consumed_alcohol + consumed_chemical +                       offered_drugs + used_hallucinogenic + describe_weight, 
+                  family = binomial, 
+                  design = analysis_weighted_ls, 
+                  na.action = na.omit))
+```
+
+Results show that being injured by a weapon (OR = 1.81, ci [1.43-2.31], p <0.01), being hurt by a partner  (OR = 1.46, ci [1.10-1.93], p <0.01), consuming alcohol (OR = 1.38, ci [1.15-1.65], p <0.01), inhaling a chemical to get high  (OR = 1.74, ci [1.33-2.28], p <0.01), consuming hallucinogenic drugs  (OR = 1.41, ci [1.02-1.93], p < 0.05), feeling hopeless  (OR = 7.97 , ci [6.7-9.46], p <0.01), being forced to have sexual relationships  (OR = 2.10 , ci [1.63 - 2.66],  p <0.01), and being offered drugs in school  (OR = 1.19 , ci [1.00 – 1.47], p< 0.05) are significant predictors of suicidal ideation when controlling by sex and grade
+
+```{r result-model-overall, echo=FALSE}
+summary(model_1)
+confint(model_1)
+exp(cbind(OR = coef(model_1), confint(model_1)))
+```
+
+Additionally, patterns of risk behaviors are very similar for both sexes; the same predictors increase the likelihood of suicidal ideation in females and males. The difference in the model is appreciated when comparing the Odd Ratios for the predictors' hopelessness and sexual abuse. For males, these values are much higher, meaning that males have three more chances of having suicidal thoughts after being victims of sexual abuse, and if they feel hopeless, they have 11 more chances. 
+
+```{r models-by-sex, include=FALSE}
+
+boys_df <- 
+  analysis%>%
+  filter(Sex == "Male")
+
+boys_srv <-
+  boys_df%>%
+  srvyr::as_survey_design(
+    ids     = PSU,
+    weights = weight,
+    strata  = stratum,
+    nest    = TRUE
+  )
+
+girls_df <- 
+  analysis %>% 
+  filter(Sex == "Female")
+
+girls_srv <-
+  girls_df%>%
+  srvyr::as_survey_design(
+    ids     = PSU,
+    weights = weight,
+    strata  = stratum,
+    nest    = TRUE
+  )
+
+model_boys <- (svyglm(suicide_considered ~ Grade + Race + injured_weapon + 
+                     physical_fight + hurt_partner + is_hopeless + forced_sexual + 
+                     consumed_alcohol + consumed_chemical + offered_drugs + 
+                     used_hallucinogenic + describe_weight, 
+                   family = binomial, 
+                   design = boys_srv, 
+                   na.action = na.omit))
+
+summary(model_boys)
+confint(model_boys)
+exp(cbind(OR = coef(model_boys), confint(model_boys)))
+
+model_girls <- (svyglm(suicide_considered ~ Grade + Race + injured_weapon + 
+                        physical_fight + hurt_partner + is_hopeless + forced_sexual + 
+                        consumed_alcohol + consumed_chemical + offered_drugs + 
+                        used_hallucinogenic + describe_weight, 
+                      family = binomial, 
+                      design = girls_srv, 
+                      na.action = na.omit))
+
+summary(model_girls)
+confint(model_girls)
+exp(cbind(OR = coef(model_girls), confint(model_girls)))
+
+
+
+```
+
+```{r table-comparing-models, echo=FALSE}
+stargazer::stargazer(model_1,model_girls, model_boys , type = "text")
+```
+
+# Discussion 
+
+The results from this study resemble the model proposed in 2005; all the predictors included in the model significantly increase the chances of having suicidal ideation, except for physical fighting. The results from this model differ from the previous one in that risk factors are the same for both sexes; the previous report found notable differences in risk behaviors between the two gender groups.  These findings impact the development of preventive programs for adolescent suicidality and promote the inclusion of suicide education curricula in high school health programs. Providing evidence of risk factors that have not been considered before will raise awareness and promote strategies for identifying at-risk adolescents. 
