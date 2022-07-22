@@ -1,4 +1,4 @@
-#' This is data to be included in my package
+#' This data set contains variables related to Suicide Behavior
 #'
 #' @name hs_suicide
 #' @docType data
