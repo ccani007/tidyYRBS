@@ -12,8 +12,7 @@ NULL
 #' considered attempting suicide, made a plan about how they would attempt 
 #' suicide, attempted suicide, and had a suicide attempt that resulted in an 
 #' injury, poisoning, or overdose that had to be treated by a doctor or nurse. 
-#' This is a subset of Combined YRBS High School Data Set.
-#' @usage 
+#' This is a subset of the Combined YRBS High School Data Set
 #' @format A tibble with 504,249 rows and 6 variables
 #' \describe{
 #' 
