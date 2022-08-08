@@ -3,9 +3,11 @@
 \docType{data}
 \name{hs_substance_use}
 \alias{hs_substance_use}
-\title{This is data to be included in my package}
+\title{This is dataset contains variables related to substance use among high school
+students}
 \description{
-This is data to be included in my package
+This is dataset contains variables related to substance use among high school
+students
 }
 \references{
 \url{data_blah.com}
