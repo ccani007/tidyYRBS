@@ -7,7 +7,9 @@
 
 # install.packages("haven")
 library(haven)
+library(tidyYRBS)
 library(tidyverse)
+
 
 
 ######  Opening raw SPSS data set  ###########################################
@@ -59,10 +61,53 @@ yrbs_2019 <-
       Q3 == 4 ~ 12L,
       TRUE ~ NA_integer_
     )
+  ) %>% 
+  mutate(across(c(Q4, Q9:Q99), factor)) %>% 
+  # Transforming binary variables from 1 and 2 to TRUE and FALSE
+  mutate(across(c(Q4, Q19, Q23, Q24, Q25, Q30, Q34, Q57, Q58, Q98),
+    RecodeTF
+        )
+  ) %>% 
+  # Transforming variables that have a scale from 0 to 6 choosing the 
+  #  worst case scenario. 
+  mutate(across(c(Q9, Q10, Q12, Q13, Q14, Q15, Q20, Q21, Q22, Q28, Q60, Q61), 
+   ScalingToNumber6
+        )
+  ) %>% 
+  # Considered Suicide
+  mutate(
+    suicide_considered = case_when(
+      Q26 == 2 ~ FALSE,
+      Q26 == 1 ~ TRUE,
+      TRUE ~ NA
+    )
+  ) %>%
+  # Planned Suicide
+  mutate(
+    suicide_planned = case_when(
+      Q27 == 2 ~ FALSE,
+      Q27 == 1 ~ TRUE,
+      TRUE ~ NA
+    )
+  ) %>%
+  # Number of Suicide Attempts
+  mutate(
+    suicide_attempts = case_when(
+      Q28 == 1 ~ 0L,
+      Q28 == 2 ~ 1L,
+      Q28 == 3 ~ 3L,
+      Q28 == 4 ~ 5L,
+      Q28 == 5 ~ 6L,
+      TRUE ~ NA_integer_
+    )
+  ) %>%
+  # Suicide Injury
+  mutate(
+    suicide_injury = case_when(
+      Q29 == 2 ~ TRUE,
+      Q29 == 3 ~ FALSE,
+      Q29 == 1 ~ FALSE,
+      TRUE ~ NA
+    )
   ) 
-
-
-
-usethis::use_data(yrbs_2019, overwrite = TRUE)
-  
 

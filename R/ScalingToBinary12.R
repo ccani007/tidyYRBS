@@ -1,4 +1,4 @@
-#' ScalingToBinary12 
+#' Converting a scale from 0 to 12 into a binary variable
 #'
 #' @param x The name of the vector to recode
 #'

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ScalingToBinary40.R
 \name{ScalingToBinary40}
 \alias{ScalingToBinary40}
-\title{ScalingToBinary40}
+\title{Converting a scale from 0 to 40 into a binary variable}
 \usage{
 ScalingToBinary40(x)
 }
@@ -13,5 +13,5 @@ ScalingToBinary40(x)
 Te vector will change to a logical atomic vector according to the values on the scale
 }
 \description{
-ScalingToBinary40
+Converting a scale from 0 to 40 into a binary variable
 }

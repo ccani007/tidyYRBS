@@ -2,7 +2,7 @@
 % Please edit documentation in R/ScalingToBinary12.R
 \name{ScalingToBinary12}
 \alias{ScalingToBinary12}
-\title{ScalingToBinary12}
+\title{Converting a scale from 0 to 12 into a binary variable}
 \usage{
 ScalingToBinary12(x)
 }
@@ -13,5 +13,5 @@ ScalingToBinary12(x)
 The values on the scale will change into a binary value of TRUE and FALSE
 }
 \description{
-ScalingToBinary12
+Converting a scale from 0 to 12 into a binary variable
 }
