@@ -60,7 +60,7 @@ yrbs_2019 <-
       TRUE ~ NA_integer_
     )
   ) %>% 
-  mutate(across(c(Q23:Q27), RecodeTF))
+  mutate(across(c(Q23, Q24, Q25, Q26, Q27), RecodeTF))
 
 
   
