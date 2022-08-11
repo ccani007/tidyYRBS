@@ -1,55 +1,40 @@
 # Version 2021-11-27
-
 # History files
 .Rhistory
 .Rapp.history
-
 # Session Data files
 .RData
 *.RData
-
 # User-specific files
 .Ruserdata
-
 # Example code in package build process
 *-Ex.R
-
 # Output files from R CMD build
 /*.tar.gz
-
 # Output files from R CMD check
 /*.Rcheck/
-
 # RStudio files
 .Rproj.user
 .Rproj.user/
-
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
-
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth
-
 # knitr and R markdown default cache directories
 *_cache/
 /cache/
-
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
-
 # R Environment Variables
 .Renviron
-
 # Mac
 .DS_Store
 .Thumbs.db
 Thumbs.db
-
-# R projects 
+# R projects
 *.Rproj
-
 # Directories
 docs/
 development/
@@ -57,45 +42,35 @@ macros/
 output/
 sasdata/
 libs/
-
 # Exclude .Rmd output
 *.html
 **/figure-html/
-
 # Exclude Text
 *.txt
 *.Txt
 *.TXT
-
 # Exclude Excel
 *.xlsx
 *.xls
-
-
 # csv data
 *.csv
 *.CSV
 *.Csv
-
 # sas data
 *.sas7bdat
 *.sas7bcat
-
 # SPSS data
 *.sav
 *.SAV
 *.Sav
-
 # SPSS output
 *.spv
 *.SPV
 *.Spv
-
 # STATA data
 *.dta
 *.DTA
 *.Dta
-
 # STATA log files
 *.log
 *.LOG
@@ -103,22 +78,17 @@ libs/
 *.smcl
 *.SMCL
 *.Smcl
-
 # VSC
 www/.vscode/
-
 # Bookdown book
 _book/
 _bookdown_files/
-
 # Binary - Powerpoint and iThoughtsX
 *.ppt
 *.pptx
 *.itmz
-
 # R packages
 *.tar
-
 # Archives
 *.zip
 *.Zip

@@ -3,9 +3,50 @@
 \docType{data}
 \name{hs_substance_use}
 \alias{hs_substance_use}
-\title{This is data to be included in my package}
+\title{hs_substance_use}
+\format{
+: A tibble with 504,249 rows and 10 variables
+\describe{ Includes variables related to substance use from the YRBSS.
+The measurements include if the subject currently drank alcohol, currently
+used marijuana, ever used prescription pain medicine, ever used cocaine,
+ever used inhalants, ever used heroin, ever used methamphetamines, ever used
+ecstasy (MDMA), and even injected any illegal drug. This is a subset of the
+Combined YRBS High School Data Set.
+\item{record}{a character variable for the ID number of the subject}
+\item{nAlcoholDays}{number of days in which a student had at least one
+drink of alcohol during the past 30 days}
+\item{nMarijuanaDays}{number of times a student used marijuana during
+the past 30 days}
+\item{used_prescrip_pain}{a Boolean where TRUE indicates that the student
+has ever taken prescription medicine without a doctor’s prescription
+differently than how a doctor told them to use it}
+\item{used_cocaine}{a Boolean where TRUE indicates that a student has ever
+used cocaine, including powder, crack, or freebase}
+\item{used_inhalant}{a Boolean where TRUE indicates that a student has ever
+used sniffed glue, breathed the contents of aerosol spray cans, or inhaled
+any paints or sprays to get high}
+\item{used_heroin}{a Boolean where TRUE indicates that a student has
+ever used heroin (also called smack, junk, or China White)}
+\item{used_methamphetamine}{a Boolean where TRUE indicates that a
+student has ever used methamphetamines (also called speed, crystal meth,
+crank, ice, or meth)}
+\item{used_MDMA}{a Boolean where TRUE indicates that a student has ever
+used ecstasy (also called “MDMA”)}
+\item{used_injection}{a Boolean where TRUE indicates that a student
+has ever used a needle to inject any illegal drug into their body}
+}
+}
+\source{
+Centers for Disease Control and Prevention. \link{2019} Youth Risk
+Behavior Survey Data. Available at:
+cdc.gov/healthyyouth/data/yrbs/pdf/2019/2019_YRBS_SADC_Dcumentation.pdf'
+}
+\usage{
+hs_substance_use
+}
 \description{
-This is data to be included in my package
+This is dataset contains variables related to substance use among high school
+students
 }
 \references{
 \url{data_blah.com}
