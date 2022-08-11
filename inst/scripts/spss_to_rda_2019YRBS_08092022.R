@@ -19,7 +19,7 @@ library(tidyverse)
 
 ### 2019 YRBS  ###
 yrbs_2019_raw <- read_sav("inst/extData/2019_YRBS_data.dat.sav")
-saveRDS(yrbs_2019_raw , "data/yrbs_2019_raw.rda")
+saveRDS(yrbs_2019_raw , "inst/extData/yrbs_2019_raw.rda")
 
 ### Cleaning variables ###
 
@@ -56,14 +56,13 @@ yrbs_2019 <-
       Q3 == 1 ~ 9L,
       Q3 == 2 ~ 10L,
       Q3 == 3 ~ 11L,
-      Q3 == 4 ~ 12L
+      Q3 == 4 ~ 12L,
       TRUE ~ NA_integer_
     )
-  ) %>% 
-  mutate(across(c(Q23:Q27), RecodeTF))
+  ) 
 
 
-  
-summary(yrbs_2019)
+
+usethis::use_data(yrbs_2019, overwrite = TRUE)
   
 

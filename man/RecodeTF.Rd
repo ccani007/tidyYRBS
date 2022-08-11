@@ -15,7 +15,3 @@ The vector will replace the numbers to a logical atomic vector
 \description{
 RecodeTF
 }
-\examples{
- [not run] mutate(across(c(q19, q57, q26), RecodeTF ))
-
-}

@@ -4,9 +4,11 @@
 #' @param x The name of the vector you want to recode 
 #'
 #' @return The vector will replace the numbers to a logical atomic vector
+#' @importFrom dplyr case_when
+#' 
 #' @export 
 #'
-#' @examples  [not run] mutate(across(c(q19, q57, q26), RecodeTF ))
+#' @examples 
 #' 
 RecodeTF <- function(x) {
   x = case_when(

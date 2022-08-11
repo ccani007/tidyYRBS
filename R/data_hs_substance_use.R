@@ -3,8 +3,6 @@
 #'
 #' @title hs_substance_use
 #' @docType data
-#' @author CDC
-#' @references \url{data_blah.com}
 #' @keywords data
 #' @format: A tibble with 504,249 rows and 10 variables
 #' \describe{ Includes variables related to substance use from the YRBSS. 
@@ -36,7 +34,7 @@
 #' \item{used_injection}{a Boolean where TRUE indicates that a student 
 #' has ever used a needle to inject any illegal drug into their body}
 #' }
-#' @source Centers for Disease Control and Prevention. [2019] Youth Risk 
+#' @source Centers for Disease Control and Prevention. 2019 Youth Risk 
 #' Behavior Survey Data. Available at: 
-#' cdc.gov/healthyyouth/data/yrbs/pdf/2019/2019_YRBS_SADC_Dcumentation.pdf' 
+#' <cdc.gov/healthyyouth/data/yrbs/pdf/2019/2019_YRBS_SADC_Dcumentation.pdf'>
 "hs_substance_use"

@@ -4,7 +4,7 @@
 #'
 #' @return The scale will change to a logical vector according to the scale.
 #' @export
-#'
+#' @importFrom dplyr case_when
 #' @examples
 ScalingToBinary30 <- function(x) {
   x = case_when(

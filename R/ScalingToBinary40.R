@@ -4,7 +4,7 @@
 #'
 #' @return Te vector will change to a logical atomic vector according to the values on the scale
 #' @export
-#'
+#' @importFrom dplyr case_when
 #' @examples
 ScalingToBinary40 <- function(x) {
   x = case_when(

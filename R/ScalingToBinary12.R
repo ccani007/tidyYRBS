@@ -4,7 +4,7 @@
 #'
 #' @return The values on the scale will change into a binary value of TRUE and FALSE
 #' @export
-#'
+#' @importFrom dplyr case_when
 #' @examples
 ScalingToBinary12 <- function(x) {
   x = case_when(
