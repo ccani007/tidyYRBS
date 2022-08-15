@@ -1,7 +1,6 @@
-
 #' Youth Risk Behavior Surveillance System 2019
 #' 
-#' @title yrbs_2019
+#' @title data_yrbs_2019
 #'
 #' @docType data
 #' 
@@ -29,4 +28,5 @@
 #'  }
 #'
 #' 
-"yrbs_2019"
+"data_yrbs_2019"
+

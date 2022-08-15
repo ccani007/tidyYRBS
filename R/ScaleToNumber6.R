@@ -14,7 +14,7 @@
 
 
 
-ScalingToNumber6 <- function(x) {
+ScaleToNumber6 <- function(x) {
     x = case_when(
       x == 1 ~ 0L,
       x == 2 ~ 1L,
