@@ -100,7 +100,7 @@ data_yrbs_2019 <-
   #  worst case scenario.
   mutate(
     across(
-      c(Q9, Q10, Q12, Q13, Q14, Q15, Q20, Q21, Q22, Q28, Q60, Q61),
+      c(Q9, Q10, Q12, Q13, Q14, Q15, Q20, Q21, Q22, Q60, Q61),
       ScaleToNumber6
     )
   ) %>%
@@ -360,9 +360,17 @@ data_yrbs_2019 <-
       TRUE ~ NA
     )
   ) %>%
-  # Number of Suicide Attempts
+  # Suicide Attempts
   mutate(
     suicide_attempts = case_when(
+      Q28 == 1 ~ FALSE,
+      Q28 %in% 2:5 ~ TRUE,
+      TRUE ~ NA
+    )
+  ) %>%
+  # Number of Suicide Attempts
+  mutate(
+    n_suicide_attempts = case_when(
       Q28 == 1 ~ 0L,
       Q28 == 2 ~ 1L,
       Q28 == 3 ~ 3L,
@@ -387,6 +395,11 @@ data_yrbs_2019 <-
   ) %>% 
   select(weight, stratum, psu, ID, Age, Sex, Grade, Race, 
          SexOrientation, SexContact, suicide_considered, suicide_planned, 
-         suicide_attempts, suicide_injury, everything())
+         suicide_attempts, n_suicide_attempts, suicide_injury, everything())
 
 usethis::use_data(data_yrbs_2019, overwrite = TRUE)
+
+table(data_yrbs_2019$suicide_attempts, useNA = "ifany")
+table(data_yrbs_2019$n_suicide_attempts, useNA = "ifany")
+table(yrbs_2019_raw$Q28, useNA = "ifany")
+
