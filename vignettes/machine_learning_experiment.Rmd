@@ -38,6 +38,7 @@ library(srvyr)
 library(survey)
 library(janitor)
 library(gtsummary)
+library(parsnip)
 
 ```
 
@@ -47,7 +48,15 @@ data("data_yrbs_2019")
 
 # Background
 
-Suicide ideation among youth are a major public health concern in the U.S.. Between 2009 and 2019, there was a significant increase in the prevalence of adolescents suidice ideation (Jones et al., 2022). Using data from the 2019 Youth Risk Behavioral Surveillance System (YRBSS) this study aims to generate a decision tree based on CART to detect risk factors for suicide attempt
+Suicide ideation among youth are a major public health concern in the U.S.. Between 2009 and 2019, there was a significant increase in the prevalence of adolescents suidice ideation (Jones et al., 2022). Using data from the 2019 Youth Risk Behavioral Surveillance System (YRBSS) this study aims to generate a decision tree based on CART to detect risk factors for suicide attempt. 
+
+https://stats.stackexchange.com/questions/102812/machine-learning-with-weighted-complex-survey-data 
+
+https://stats.stackexchange.com/questions/238141/two-worlds-collide-using-ml-for-complex-survey-data 
+
+Complex Surveys: A Guide to Analysis Using R
+
+
 
 # Method
 The data comes from the biennial YRBSS for high school students from 2019. The `tidyYRBS` package was used to analyze the data in R studio and perform the wrangling. 
@@ -129,37 +138,38 @@ suicide_injury <-
 ```
 
 
-## CART without weights 
+## CART with weights 
 
-```{r}
-glimpse(data_yrbs_2019)
-```
+First, I wrangled the data. 
+It is necessary to convert the variables into factors because `tidymodels` needs the variables to be defined as such. 
+Finally, I eliminated race and Q4 (asks if the adolescent is Latino) because this pilot will only consider adolescents that selected Hispanic/Latino.  
 
-
-This code will split the data into testing and training
-
-```{r split-data}
-
+```{r wrangle}
 data_yrbs_2019_race <- 
   data_yrbs_2019 %>% 
   filter(Race == "Hispanic/Latino") %>% 
   mutate(
     across(
-      c(suicide_considered, suicide_planned, suicide_injury, Q4, Q19, 
-        Q23, Q24, Q25, Q30, Q34, Q57, Q39, Q57, Q63, Q58, Q98, Q84, Q85, Q87, Q94), 
+      c(suicide_considered, suicide_planned, suicide_injury, Q19, 
+        Q23, Q24, Q25, Q30, Q34, Q57, Q39, Q57, Q63, Q58, Q98, 
+        Q84, Q85, Q87, Q94), 
       factor
      )
    ) %>% 
-  select(- c(weight, stratum, psu, n_suicide_attempts, Race, Q4))
+  filter(!is.na(suicide_considered)) %>% 
+  mutate(case_wts = importance_weights(weight)) %>% 
+  select(- c(stratum, psu, n_suicide_attempts, Race, Q4,          suicide_planned, suicide_attempts, suicide_injury, weight))
 
+```
 
-set.seed(02282015)
+After the wrangling I splitted the data into training (75%) and testing (25%) with a stratified argument for the outcome (suicide ideation). 
+
+```{r split-data}
+set.seed(1234)
 
 analysis_split <-
-  data_yrbs_2019_race  %>% 
+  data_yrbs_2019_race %>% 
   initial_split(strata = suicide_considered)
-
-analysis_split
 
 analysis_train <- training(analysis_split)
 analysis_test <- testing(analysis_split)
@@ -167,60 +177,57 @@ analysis_test <- testing(analysis_split)
 # Checking the training and test data sets
 
 n_analysis_model <- 
-data_yrbs_2019 |>
-  tabyl(suicide_considered) |>
-  adorn_pct_formatting(0) |>
+data_yrbs_2019_race  %>% 
+  tabyl(suicide_considered) %>% 
+  adorn_pct_formatting(0) %>% 
   adorn_totals()
+
+n_analysis_model
 
 n_analysis_train <- 
-analysis_train |>
-  tabyl(suicide_considered) |>
-  adorn_pct_formatting(0) |>
+analysis_train %>% 
+  tabyl(suicide_considered) %>% 
+  adorn_pct_formatting(0) %>% 
   adorn_totals()
+
+n_analysis_train
 
 n_analysis_test <- 
-analysis_test |>
-  tabyl(suicide_considered) |>
-  adorn_pct_formatting(0) |>
+analysis_test %>% 
+  tabyl(suicide_considered) %>% 
+  adorn_pct_formatting(0) %>% 
   adorn_totals()
 
-# Creating table for report
-table_model <- 
-  data_yrbs_2019 |> 
-  select(suicide_considered) 
-
-tbl_analysis_model <- tbl_summary(table_model)
-
-table_train <- 
-  analysis_train |> 
-  select(suicide_considered) 
-
-tbl_analysis_train <- tbl_summary(table_train)
-
-table_test <- 
-  analysis_test  |> 
-  select(suicide_considered)
-    
-tbl_analysis_test <- tbl_summary(table_test)
-
-complete_table <- 
-  tbl_merge(
-    tbls = list(tbl_analysis_model, tbl_analysis_train, tbl_analysis_test), 
-    tab_spanner = c("**Complete data**", "**Training data**", "**Testing data**" ) 
-  ) 
+n_analysis_test
 
 ```
 
+
 ## Building the model with `Tidymodels`
 
-```{r themodel}
-the_recipe <- 
-  recipe(formula = suicide_considered ~ ., data = analysis_train) %>%
-  update_role(ID, new_role = "ID") %>%  
-  step_dummy(all_nominal_predictors()) 
+After dividing the data, I will create the model using the three `tidymodels` steps:   
+1. The recipe  
+2. Setting the model   
+3. Setting the workflow. 
 
-x <- bake(prep(the_recipe), new_data = NULL)
-skimr::skim(x)
+
+```{r}
+set.seed(2)
+sim_folds <- vfold_cv(data_yrbs_2019_race , strata = suicide_considered)
+```
+
+
+```{r themodel, warning=FALSE}
+library(workflows)
+the_recipe <- 
+  recipe(suicide_considered ~ ., data = analysis_train ) %>%
+  update_role(ID, new_role = "ID") %>%  
+  step_normalize(all_numeric_predictors())
+
+
+# This is to observe the new data after tranforming nominals to dummies
+ x <- bake(prep(the_recipe), new_data = NULL)
+# skimr::skim(x)
 
 cart_model <- 
   decision_tree(cost_complexity = tune()) %>% 
@@ -230,14 +237,23 @@ cart_model <-
 cart_workflow <- 
   workflow() %>% 
   add_recipe(the_recipe) %>% 
-  add_model(cart_model)
+  add_model(cart_model) %>% 
+  add_case_weights(case_wts)
+
+```
+
+
+Before running the model I will use 10-fold cross validation to find the best Complexity Parameter for the decision tree using this code:
+
+```{r crossvalidation}
 
 cv_folds <-
   vfold_cv(analysis_train, 
-           v = 5,  # the number of sets
+           v = 10,  # the number of sets
            strata = suicide_considered)
 
-doParallel::registerDoParallel()  # use multiple CPU cores for faster processing
+# use multiple CPU cores for faster processing
+doParallel::registerDoParallel()  
 
 cart_tune <- 
   cart_workflow %>% 
@@ -247,25 +263,37 @@ cart_tune <-
             control = control_grid(save_pred = TRUE)
   )
 
+# stop the use multiple CPU cores for faster processing
 doParallel::stopImplicitCluster()  
 
-# Best CP
+```
+
+After the crossvalidation, I proceed to evaluate and choose the best CP value by the highest value on the receiver operating characteristic curve (ROC)
+
+``` {r choosing-bestCP, dev='svg'}
+
 show_best(cart_tune, metric = "roc_auc")
 
-bestPlot_cart <- 
-  autoplot(cart_tune)
+bestPlot_cart <- autoplot(cart_tune)
+bestPlot_cart
 
 cart_best <- select_best(cart_tune, metric = "roc_auc")
+cart_best
+```
 
-# The model with the best CP
+After choosing the best CP I proceed to run the final workflow with this code:
+```{r final-model, warning=FALSE}
 
 cart_final_workflow <- 
   cart_workflow %>% 
   finalize_workflow(cart_best)
 
+# Ideation fit is the object that will fit the final workflow in the 
+#  Training data set. 
 ideation_fit <- 
-  cart_final_workflow |>  
+  cart_final_workflow %>%   
   fit(data = analysis_train)
+
 
 the_results <-
   cart_final_workflow %>% 
@@ -273,18 +301,28 @@ the_results <-
            metrics = metric_set(recall, precision, f_meas, 
                                 yardstick::accuracy, kap,
                                 roc_auc, sens, spec))
+```
+After running the model I am interested in knowing the metrics, therefore I collect them and present them in the following table 
 
-# Metrics
-the_results %>%
+```{r metrics, echo=FALSE} 
+
+metrics <- 
+  the_results %>%
   collect_metrics(summarize = TRUE)
 
+metrics
+
+```
+
+In order to evaluate the performance of the model classifying I created a confusion matrix: 
+```{r confusion-matrix, dev='svg', warning=FALSE}
 # Prediction per person 
 
 the_prediction <-  
   the_results %>% 
   collect_predictions()
 
-head(the_prediction, n = 20)
+# head(the_prediction, n = 20)
 
 # Confusion Matrix 
 
@@ -295,16 +333,21 @@ confusion_matrix_cart <-
 confusion_matrixPlot_cart <- 
   autoplot(confusion_matrix_cart, type = "heatmap")
 
+confusion_matrixPlot_cart
+```
+
+ I plotted the ROC-AUC for both the training and testing data set to evaluate the performance of the model. 
+This is the training confusion matrix:
+ 
+```{r roc-training, dev='svg', warning=FALSE}
 #ROC curve training
 
 ideation_pred_train <- 
   predict(ideation_fit, analysis_train, type = "prob") |> 
   bind_cols(analysis_train %>% select(suicide_considered)) 
 
-ideation_pred_train
-
 rocPlot_cart_train <- 
-  ideation_pred_train |> 
+  ideation_pred_train %>%  
   roc_curve(truth = suicide_considered, .pred_FALSE) |> 
   autoplot()
 
@@ -312,6 +355,14 @@ rocTable_cart_train <-
   ideation_pred_train  %>% 
   roc_auc(truth = suicide_considered, .pred_FALSE)
 
+rocPlot_cart_train
+rocTable_cart_train
+
+
+```
+
+This is the testing confusion matrix 
+```{r testing, dev='svg'}
 # ROC curve testing
 
 rocPlot_cart <- 
@@ -320,21 +371,23 @@ rocPlot_cart <-
   autoplot() 
 
 rocTable_cart <- 
-  the_prediction |> 
+  the_prediction %>%  
   roc_auc(truth = suicide_considered, .pred_FALSE)
 
+rocPlot_cart
+rocTable_cart
+```
 
-# The tree ----------------------------------------------------------------
+Finally I plotted the decision tree
 
+```{r the-tree, dev='svg'}
 
 cart_trained <- 
-  the_results |> extract_fit_parsnip()
+  the_results %>% 
+  extract_fit_parsnip()
 
 cart_tree_fit <- cart_trained$fit
-
-rpart.plot::rpart.plot(cart_tree_fit, roundint = FALSE)
 
 treemisc::tree_diagram(cart_tree_fit, roundint=FALSE)
 
 ```
-
