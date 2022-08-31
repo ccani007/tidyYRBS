@@ -43,7 +43,7 @@ library(hardhat)
 ```
 
 ```{r loading-data, include=FALSE}
-data("data_yrbs_2019")
+data("clean_yrbs_2019")
 ```
 
 # Background
@@ -54,7 +54,7 @@ Suicide ideation among youth are a major public health concern in the U.S.. Betw
 The data comes from the biennial YRBSS for high school students from 2019. The `tidyYRBS` package was used to analyze the data in R studio and perform the wrangling. 
 
 ```{r demographics, include=FALSE}
-n <-  data_yrbs_2019 %>% nrow()
+n <- clean_yrbs_2019 %>% nrow()
 
 ```
 
@@ -65,7 +65,7 @@ The number of adolescents included in this study is N = `r format(c(n), big.mark
 
 # This function transforms the Data Frame into a survey object
 yrbs_2019_srv <-
-  data_yrbs_2019 %>%
+  clean_yrbs_2019 %>%
   srvyr::as_survey_design(
     ids     = psu,
     weights = weight,
@@ -133,7 +133,7 @@ Finally, I eliminated race and Q4 (asks if the adolescent is Latino) because thi
 
 ```{r wrangle}
 data_yrbs_2019_race <- 
-  data_yrbs_2019 %>% 
+  clean_yrbs_2019 %>% 
   filter(Race == "Hispanic/Latino") %>% 
   mutate(
     across(

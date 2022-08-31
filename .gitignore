@@ -60,9 +60,10 @@ libs/
 *.sas7bdat
 *.sas7bcat
 # SPSS data
-*.sav
-*.SAV
-*.Sav
+#*.sav
+#*.SAV
+#*.Sav
+# Commented .SAV to be able to have the raw data. 
 # SPSS output
 *.spv
 *.SPV

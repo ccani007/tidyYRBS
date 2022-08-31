@@ -20,13 +20,13 @@ library(tidyverse)
 
 
 ### 2019 YRBS  ###
-yrbs_2019_raw <- read_sav("inst/extData/2019_YRBS_data.dat.sav")
+raw_yrbs_2019 <- read_sav("inst/extData/2019_YRBS_data.dat.sav")
 saveRDS(yrbs_2019_raw, "inst/extData/yrbs_2019_raw.rda")
+usethis::use_data(raw_yrbs_2019, overwrite = TRUE)
 
 
 ### Cleaning variables ###
-
-data_yrbs_2019 <-
+clean_yrbs_2019 <-
   yrbs_2019_raw %>%
   mutate(ID = row_number()) %>%
   mutate(
@@ -63,11 +63,11 @@ data_yrbs_2019 <-
   ) %>%
   mutate(
     Grade = case_when(
-      Q3 == 1 ~ 9L,
-      Q3 == 2 ~ 10L,
-      Q3 == 3 ~ 11L,
-      Q3 == 4 ~ 12L,
-      TRUE ~ NA_integer_
+      Q3 == 1 ~ "9",
+      Q3 == 2 ~ "10",
+      Q3 == 3 ~ "11",
+      Q3 == 4 ~ "12",
+      TRUE ~ NA_character_
     )
   ) %>%
   mutate(
@@ -397,9 +397,5 @@ data_yrbs_2019 <-
          SexOrientation, SexContact, suicide_considered, suicide_planned, 
          suicide_attempts, n_suicide_attempts, suicide_injury, everything())
 
-usethis::use_data(data_yrbs_2019, overwrite = TRUE)
-
-table(data_yrbs_2019$suicide_attempts, useNA = "ifany")
-table(data_yrbs_2019$n_suicide_attempts, useNA = "ifany")
-table(yrbs_2019_raw$Q28, useNA = "ifany")
+usethis::use_data(clean_yrbs_2019, overwrite = TRUE)
 

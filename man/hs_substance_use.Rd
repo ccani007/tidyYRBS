@@ -6,12 +6,7 @@
 \title{hs_substance_use}
 \format{
 : A tibble with 504,249 rows and 10 variables
-\describe{ Includes variables related to substance use from the YRBSS.
-The measurements include if the subject currently drank alcohol, currently
-used marijuana, ever used prescription pain medicine, ever used cocaine,
-ever used inhalants, ever used heroin, ever used methamphetamines, ever used
-ecstasy (MDMA), and even injected any illegal drug. This is a subset of the
-Combined YRBS High School Data Set.
+\describe{
 \item{record}{a character variable for the ID number of the subject}
 \item{nAlcoholDays}{number of days in which a student had at least one
 drink of alcohol during the past 30 days}
@@ -37,15 +32,25 @@ has ever used a needle to inject any illegal drug into their body}
 }
 }
 \source{
-Centers for Disease Control and Prevention. 2019 Youth Risk
-Behavior Survey Data. Available at:
 <cdc.gov/healthyyouth/data/yrbs/pdf/2019/2019_YRBS_SADC_Dcumentation.pdf'>
 }
 \usage{
-hs_substance_use
+data(hs_substance_use)
 }
 \description{
+Includes variables related to substance use from the YRBSS.
+The measurements include if the subject currently drank alcohol, currently
+used marijuana, ever used prescription pain medicine, ever used cocaine,
+ever used inhalants, ever used heroin, ever used methamphetamines,
+ever used ecstasy (MDMA), and even injected any illegal drug. This is a
+subset of the Combined YRBS High School Data Set.
+}
+\details{
 This is dataset contains variables related to substance use among high school
 students
 }
-\keyword{data}
+\author{
+Centers for Disease Control and Prevention, Youth Risk Behavior
+survey data
+}
+\keyword{datasets}

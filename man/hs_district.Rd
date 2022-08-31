@@ -3,14 +3,23 @@
 \docType{data}
 \name{hs_district}
 \alias{hs_district}
-\title{This is data to be included in my package}
-\description{
-This is data to be included in my package
+\title{hs_district}
+\format{
+A tibble with 504, 249 rows and 314 variables
+\url{https://www.cdc.gov/healthyyouth/data/yrbs/pdf/2019/2019_YRBS_SADC_Documentation.pdf}
 }
-\references{
-\url{data_blah.com}
+\source{
+<cdc.gov/healthyyouth/data/yrbs/pdf/2019/2019_YRBS_SADC_Dcumentation.pdf>
+}
+\usage{
+data(hs_district)
+}
+\description{
+This is dataset contains variables related to high school students'
+demographics
 }
 \author{
-CDC
+Centers for Disease Control and Prevention, Youth Risk Behavior
+Survey Data
 }
-\keyword{data}
+\keyword{datasets}
