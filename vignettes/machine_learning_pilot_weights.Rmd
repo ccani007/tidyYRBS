@@ -28,8 +28,6 @@ options(dplyr.summarise.inform=F)
 
 ```{r tidymodels, include=FALSE}
 suppressPackageStartupMessages(library(tidymodels))
-tidymodels_prefer()
-suppressMessages(conflict_prefer("spec", "yardstick"))
 ```
 
 ```{r setup-packages, include=FALSE}
@@ -280,7 +278,7 @@ the_results <-
   last_fit(split = analysis_split, 
            metrics = metric_set(recall, precision, f_meas, 
                                 yardstick::accuracy, kap,
-                                roc_auc, sens, spec))
+                                roc_auc, sens, yardstick::spec))
 ```
 After running the model I am interested in knowing the metrics, therefore I collect them and present them in the following table 
 

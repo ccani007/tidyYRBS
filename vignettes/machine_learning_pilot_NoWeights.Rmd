@@ -42,7 +42,7 @@ library(doParallel)
 ```
 
 ```{r loading-data, include=FALSE}
-data("data_yrbs_2019")
+data("clean_yrbs_2019")
 ```
 
 # Background
@@ -57,7 +57,7 @@ The data comes from the biennial YRBSS for high school students from 2019. The `
 ## Participants 
 
 ```{r participants, echo=FALSE}
-n <- data_yrbs_2019 %>% 
+n <- clean_yrbs_2019 %>% 
   nrow() %>% 
   comma() 
 
@@ -74,13 +74,7 @@ However, the total number of adolescents in each group is the same for both repo
 
 ```{r demographics, echo=FALSE}
 
-# This will be fixed in the wrangling of the data for the package
-data_yrbs_2019 <- 
-  data_yrbs_2019 %>% 
-  mutate(Grade = factor(Grade))
-
-
-demographics <- table1(~ Sex + Race + Grade, data = data_yrbs_2019, title = "Table 1, Demographics")
+demographics <- table1(~ Sex + Race + Grade, data = clean_yrbs_2019, title = "Table 1, Demographics")
 demographics
 
 ```
@@ -95,7 +89,7 @@ Finally, I eliminated race and Q4 (asks if the adolescent is Latino) because thi
 
 ```{r wrangle}
 data_yrbs_2019_race <- 
-  data_yrbs_2019 %>% 
+  clean_yrbs_2019 %>% 
   filter(Race == "Hispanic/Latino") %>% 
   mutate(
     across(
