@@ -1,0 +1,382 @@
+
+---
+title: "Risk Factors Associated with Suicide Attempts in U.S High School Students using Random Forest"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Risk Factors Associated with Suicide Attempts in U.S High School Students using Random Forest}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = TRUE,
+	warning = TRUE
+)
+```
+
+```{r tidyverse, include=FALSE, message=FALSE}
+library(conflicted)
+conflict_prefer("filter", "dplyr", quiet = TRUE)
+conflict_prefer("lag", "dplyr", quiet = TRUE)
+suppressPackageStartupMessages(library(tidyverse))
+
+# suppress "`summarise()` has grouped output by " messages
+options(dplyr.summarise.inform=F)  
+```
+
+```{r tidymodels, include=FALSE}
+suppressPackageStartupMessages(library(tidymodels))
+```
+
+
+```{r}
+library(hardhat)
+library(tidyYRBS)
+library(skimr)
+```
+
+```{r}
+data("clean_yrbs_2019")
+# 13,677 x 89
+```
+
+
+
+# Data Wrangling and adding weights as importance weights
+
+```{r}
+clean_yrbs_2019 <- 
+  clean_yrbs_2019 %>% 
+  mutate(
+    across(
+      c( suicide_considered, Q19, Q23, Q24, Q25, Q30, Q34, Q57, Q39, 
+         Q57, Q63, Q58, Q98, Q84, Q85, Q87, Q94), 
+      factor
+    )
+  ) %>% 
+  filter(!is.na(suicide_considered)) %>% 
+  mutate(case_wts = importance_weights(weight)) %>% 
+  select(- c(stratum, psu, n_suicide_attempts, Q4, suicide_planned, 
+             suicide_attempts, suicide_injury, weight, ID))
+# 13426 x 81
+
+```
+
+Checking which variables have lost data
+To run this function first remove the weights from the wrangling. 
+
+
+```{r}
+
+clean_yrbs_2019 %>% 
+  skim() %>%
+  arrange(complete_rate)
+
+# There is a lot of lost data!!
+# In consensus with Dr. Odom, we decided to go through each question that has 
+#  bellow 80% of complete rate and evaluate if the question can be eliminated
+#  from the predictor. 
+
+# Here I present the list of items that have less of 80% of completeness
+#  therefore they where removed and I provide a  small explanation of why 
+#  it is ok to remove it. 
+
+# Q12 and Q14 can be replaced by Q13 because they have similar content
+# Q17 can be replaced by Q18 because they have similar content
+# Q20 and Q21 can be replaced by Q19 and Q22 because they have similar content
+# Q30 can be replaced by Q32
+# Q39 could not be replaced, it talks about quitting smoking
+# Q43 can be replaced by Q41 and Q42
+# Q51 no replacement but other questions ask about substances to get high
+# Q55 no replacement, it asks about the use of steroids 
+# Q65 asks about sexual contact, although not the same it can be replaced with
+#  Q66 that asks about sexual orientation
+# Q77 no replacement but asks about milk consumption, not a priority for the 
+#  model
+# Q82 no replacement, asks about sports team
+# Q85 no replacement, asks about STD testing
+# Q92, Q93, Q94, Q95, Q96, Q97 no replacements, 
+#  although they are interesting they can be disregarded. They ask about 
+#  gatorade water, food allergies, exercise to tone muscles, and use of sunscreen 
+# Q90 can be replaced with Q49
+
+# Items that should be removed given the amount of lost data, but are of great
+#  interest to the model 
+# Q91 no replacement, asks about LCD, acid, PCP, interesting to keep..
+# Q98 asks about difficulty concentrating and making decisions due to a physical 
+# or mental problems 
+
+```
+
+
+
+This code will remove the items with less than 80% complete rate
+```{r}
+clean_yrbs_2019 <-
+  clean_yrbs_2019 %>%
+  select(-c(
+    Q12, Q14, Q17, Q20, Q30, Q39, Q43, Q51, Q55, SexContact, Q77, Q82, Q85,
+    Q92, Q93, Q94, Q95, Q96, Q97, Q90
+  ))
+# 13437 x 61
+
+countNA <- function(x) sum(is.na(x)) 
+
+clean_yrbs_2019 <- 
+  clean_yrbs_2019 %>%
+  mutate(count_na = apply(., 1, countNA)) %>% 
+  select(count_na, dplyr::everything()) %>% 
+  arrange(desc(count_na))
+# 13437 x 62
+
+# When running a summary, the mean of lost data is 5.9 per row and the max is 
+#  44, there are 61 variables in total. I am only going to accept that cases
+#  have less than 15% of lost data, meaning I am going to filter all the cases
+#  that have more than 9 variables with NA
+
+summary(clean_yrbs_2019$count_na)
+
+clean_yrbs_2019 <- 
+  clean_yrbs_2019 %>% 
+  filter(count_na <= 9) %>% 
+  select(-count_na)
+# 10426 x 61 
+# With this decision I loose 3088 cases. 
+
+```
+
+
+
+
+# Splitting data 75% - 15%
+
+```{r}
+set.seed(1234)
+analysis_split <-
+  clean_yrbs_2019 %>% 
+  initial_split(strata = suicide_considered)
+
+analysis_train <- training(analysis_split)
+analysis_test <- testing(analysis_split)
+
+```
+
+```{r}
+# Cross validation set only with analysis data
+set.seed(2)
+cv_folds <-
+  vfold_cv(analysis_train, 
+           v = 5,  # the number of sets
+           strata = suicide_considered )
+
+```
+
+
+```{r}
+# Used this function to create the reciepe 
+ usemodels::use_ranger(suicide_considered ~ ., data = analysis_train)
+
+ranger_recipe <- 
+  recipe(formula = suicide_considered ~ ., data = analysis_train) %>% 
+  step_impute_mode(all_nominal_predictors()) %>% 
+  step_impute_mean(all_numeric_predictors()) %>% 
+  step_string2factor(one_of("Sex", "Grade", "SexOrientation")) %>% 
+  step_dummy(all_nominal_predictors()) 
+
+ranger_model <- 
+  rand_forest(mtry = tune(),  # Number of variables available for splitting at each tree node
+              min_n = tune(),  # Minimum number of people in a node for the node to be split further.
+              trees = 1000) %>%  # Trying only 1000 trees
+  set_mode("classification") %>% 
+  set_engine("ranger", 
+             importance = "permutation") # method used for variable importance
+
+ranger_workflow <- 
+  workflow() %>% 
+  add_recipe(ranger_recipe) %>% 
+  add_model(ranger_model) %>% 
+  add_case_weights(case_wts)
+
+set.seed(1967)
+doParallel::registerDoParallel()  # parallel process for speed on the Mac
+ranger_tune <-
+  tune_grid(ranger_workflow, 
+            resamples = cv_folds, 
+            grid = 10)
+doParallel::stopImplicitCluster()  # stop parallel processing
+
+saveRDS(ranger_tune, "rf_outputs/ranger_tune.rds")
+
+```
+
+```{r}
+
+# Looking at AUC
+first_tunning <- 
+ranger_tune %>%
+  collect_metrics() %>%
+  filter(.metric == "roc_auc") %>%
+  select(mean, min_n, mtry) %>%
+  pivot_longer(min_n:mtry,
+               values_to = "value",
+               names_to = "parameter"
+  ) %>%
+  ggplot(aes(value, mean, color = parameter)) +
+  geom_point(show.legend = FALSE) +
+  facet_wrap(~parameter, scales = "free_x") +
+  labs(x = NULL, y = "AUC")
+
+saveRDS(first_tunning, "rf_outputs/firstTunning.rds")
+ggsave("rf_outputs/first_tunning.png")
+```
+
+# Finalize the Model with the best hyperparameters
+```{r}
+rf_best <- select_best(ranger_tune, "roc_auc")
+
+RF_final_workflow <- 
+  ranger_workflow  %>% 
+  finalize_workflow(rf_best)
+
+ideation_fit <- 
+  RF_final_workflow %>%   
+  fit(data = analysis_train)
+
+the_results <-
+  ranger_workflow %>% 
+  finalize_workflow(rf_best) %>% 
+  # rebuild the model using all training data (not resampled) and fit on test
+  last_fit(split = analysis_split, 
+           metrics = metric_set(recall, precision, f_meas, accuracy, kap,
+                                roc_auc, sens, yardstick::spec))
+
+saveRDS(the_results, "rf_outputs//the_results.rds")
+
+```
+
+
+
+```{r}
+
+# Predict
+the_prediction <-  
+  the_results %>% 
+  collect_predictions()
+
+head(the_prediction)
+
+# Confusion Matrix
+confusion_matrix <- 
+  the_prediction %>% 
+  conf_mat(suicide_considered, .pred_class)
+
+confusion_matrixPlot <- 
+  autoplot(confusion_matrix, type = "heatmap")
+
+confusion_matrix <- saveRDS(confusion_matrix, "rf_outputs/confusion_matrix.rds")
+ggsave("rf_outputs/confusion_matrixPlot.png")
+
+
+
+```
+
+
+```{r}
+# ROC Curve for the model 
+ROC_model <- 
+  the_prediction %>% 
+  roc_curve(suicide_considered, .pred_FALSE) %>% 
+  autoplot()
+
+rocTable <- 
+  the_prediction  %>% 
+  roc_auc(truth = suicide_considered, .pred_FALSE)
+
+ggsave("rf_outputs/ROC_model.png")
+saveRDS(rocTable, "rf_outputs/rocTable.rds")
+```
+
+```{r}
+# ROC for the training data
+ideation_pred_train <- 
+  predict(ideation_fit, analysis_train, type = "prob") |> 
+  bind_cols(analysis_train %>% select(suicide_considered)) 
+
+saveRDS(ideation_pred_train,"rf_outputs/ideation_pred_train.rds")
+
+rocPlot_train <- 
+  ideation_pred_train %>%  
+  roc_curve(truth = suicide_considered, .pred_FALSE) |> 
+  autoplot()
+
+saveRDS()
+ggsave("rf_outputs//rocPlot_train.png")
+
+rocTable_train <- 
+  ideation_pred_train  %>% 
+  roc_auc(truth = suicide_considered, .pred_FALSE)
+
+saveRDS(rocTable_train,"rf_outputs/rocTable_train.rds")
+```
+
+
+
+```{r}
+# Prediction Probabilities
+prediction_prob_plot <- 
+the_prediction %>% 
+  ggplot() +
+  geom_density(aes(x = .pred_FALSE, 
+                   fill = suicide_considered), 
+               alpha = 0.5) +
+  labs(title = "Answering True to Considering suicide vs Prediction Probabilty",
+       x = "Probabilty of not considering suicide",
+       y = "Density") +
+  ggthemes::theme_few()  +
+  theme(legend.title=element_blank())
+
+saveRDS(prediction_prob_plot, "rf_outputs/prediction_prob_plot.rds")
+ggsave("rf_outputs/prediction_prob_plot.png")
+
+
+```
+
+
+
+```{r}
+# Look at the Metrics
+
+results_metrics <- 
+  the_results %>%
+  collect_metrics(summarize = TRUE)
+
+saveRDS(results_metrics,"rf_outputs/results_metrics.rds")
+read_rds("rf_outputs/results_metrics.rds")
+```
+
+
+```{r}
+
+# What matters?
+
+library(vip)  # variable importance plots
+
+final_rf <- ranger_workflow %>%
+  finalize_workflow(rf_best)  # the spec with best C statistic
+
+rf_vip <- 
+  final_rf %>%
+  fit(analysis_train) %>%
+  extract_fit_parsnip() %>%
+  vip()
+
+saveRDS(rf_vip, "rf_outputs/rf_vip.rds")
+
+readRDS("rf_outputs/rf_vip.rds")
+
+```
+
+
+
