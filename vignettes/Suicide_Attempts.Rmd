@@ -726,12 +726,13 @@ analysis_weighted_attempts_ls <- survey::svydesign(
   data = analysis_attempts_df
 )
 
+
+
 # The model
 model_1 <- (svyglm(suicide_attempts ~ Sex  + time + Grade + Race + injured_weapon  + physical_fight   + hurt_partner + is_hopeless + forced_sexual + consumed_alcohol + consumed_chemical + offered_drugs + used_hallucinogenic + describe_weight, 
                   family = binomial, 
                   design = analysis_weighted_attempts_ls, 
                   na.action = na.omit))
-
 
 ```
 

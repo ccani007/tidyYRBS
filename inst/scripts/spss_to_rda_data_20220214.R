@@ -27,7 +27,6 @@ hs_district_raw <- read_sav("inst/extData/sadc_hs_2019_district.sav")
 # saveRDS(hs_district_raw, "data/hs_district.rds")
 
 
-
 ######  Clean Geography  ######################################################
 # Cleaned the sitename vector. Separated the city from the state and the
 #   abbreviation. Eliminated the word "county" and "burough of". Eliminated

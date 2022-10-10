@@ -114,6 +114,20 @@ analysis_attempts_df <-
       TRUE ~ NA
     )
   ) %>% 
+  mutate(
+    q19 = case_when(
+      q19 == 1 ~ TRUE,
+      q19 == 2 ~ FALSE,
+      TRUE ~ NA
+    )
+  ) %>% 
+   mutate(
+    q57 = case_when(
+      q57 == 1 ~ TRUE,
+      q57 == 2 ~ FALSE,
+      TRUE ~ NA
+    )
+  ) %>% 
  select(all_of(V_interest)) %>% 
  rename(
     Sate             = state.x, 
@@ -164,19 +178,6 @@ analysis_attempts_srv <-
     strata  = stratum,
     nest    = TRUE
   )
-
-
-xyz <- rep(NA, length(analysis_attempts_srv$variables$forced_sexual))
-xyz[analysis_attempts_srv$variables$forced_sexual == "1"] <- FALSE 
-xyz[analysis_attempts_srv$variables$forced_sexual == "2"] <- TRUE
-
-analysis_attempts_srv$variables$forced_sexual <- xyz
-
-xyx <- rep(NA, length(analysis_attempts_srv$variables$offered_drugs))
-xyx[analysis_attempts_srv$variables$offered_drugs == "1"] <- FALSE 
-xyz[analysis_attempts_srv$variables$offered_drugs == "2"] <- TRUE
-
-analysis_attempts_srv$variables$offered_drugs <- xyx
 
 
 # Cheking the amount of observations
@@ -789,7 +790,10 @@ analysis_weighted_attempts_ls <- survey::svydesign(
 )
 
 # The model
-model_1 <- (svyglm(suicide_attempts ~ Sex  + time + Grade + Race + injured_weapon  + physical_fight   + hurt_partner + is_hopeless + forced_sexual + consumed_alcohol + consumed_chemical + offered_drugs + used_hallucinogenic + describe_weight, 
+model_1 <- (svyglm(suicide_attempts ~ Sex + Grade + Race + injured_weapon + 
+                     physical_fight   + hurt_partner + is_hopeless + 
+                     forced_sexual + consumed_alcohol + consumed_chemical + 
+                     offered_drugs + used_hallucinogenic + describe_weight, 
                   family = binomial, 
                   design = analysis_weighted_attempts_ls, 
                   na.action = na.omit))
@@ -802,10 +806,15 @@ model_1 <- (svyglm(suicide_attempts ~ Sex  + time + Grade + Race + injured_weapo
 table_model1 <- 
   tbl_regression(model_1 ,
                  exponentiate = TRUE, 
-                 show_single_row = c("injured_weapon" , "physical_fight",  "hurt_partner",  "is_hopeless", "forced_sexual", "consumed_alcohol", "consumed_chemical", "offered_drugs", "used_hallucinogenic")) %>% 
-  bold_labels() %>% 
-  bold_p(t =.1) %>% 
-  modify_caption("**Table 1. Logistic Regression Model Controlling by Sex, Grade and Year**") 
+                 show_single_row = c("injured_weapon" , "physical_fight",  
+                                     "hurt_partner",  "is_hopeless", 
+                                     "forced_sexual", "consumed_alcohol", 
+                                     "consumed_chemical", "offered_drugs", 
+                                     "used_hallucinogenic")) %>% 
+                 bold_labels() %>% 
+                 bold_p(t =.1) %>% 
+                  modify_caption("**Table 1. Logistic Regression Model 
+                                 Controlling by Sex and Grade**") 
 
 
 ```
@@ -849,7 +858,10 @@ girls_srv <-
     nest    = TRUE
   )
 
-model_boys <- (svyglm(suicide_attempts ~ Grade + Race + injured_weapon + physical_fight  + hurt_partner + is_hopeless + forced_sexual +consumed_alcohol + consumed_chemical + offered_drugs + used_hallucinogenic + describe_weight, 
+model_boys <- (svyglm(suicide_attempts ~ Grade + Race + injured_weapon + 
+                        physical_fight + hurt_partner + is_hopeless + 
+                        forced_sexual + consumed_alcohol + consumed_chemical + 
+                        offered_drugs + used_hallucinogenic + describe_weight, 
                    family = binomial, 
                    design = boys_srv, 
                    na.action = na.omit))
@@ -858,7 +870,10 @@ summary(model_boys)
 confint(model_boys)
 exp(cbind(OR = coef(model_boys), confint(model_boys)))
 
-model_girls <- (svyglm(suicide_attempts ~ Year + Grade + Race + injured_weapon + physical_fight + hurt_partner + is_hopeless + forced_sexual +consumed_alcohol + consumed_chemical + offered_drugs +used_hallucinogenic + describe_weight, 
+model_girls <- (svyglm(suicide_attempts ~  Grade + Race + injured_weapon + 
+                         physical_fight + hurt_partner + is_hopeless + 
+                         forced_sexual + consumed_alcohol + consumed_chemical +
+                         offered_drugs +used_hallucinogenic + describe_weight, 
                       family = binomial, 
                       design = girls_srv, 
                       na.action = na.omit))
@@ -873,21 +888,27 @@ exp(cbind(OR = coef(model_girls), confint(model_girls)))
 table_model_male <- 
   tbl_regression(model_boys,
                  exponentiate = TRUE, 
-                 show_single_row = c("injured_weapon", "physical_fight", "hurt_partner", 
-                                     "is_hopeless", "forced_sexual", "consumed_alcohol", "consumed_chemical", "offered_drugs", "used_hallucinogenic")) %>% 
-  bold_labels() %>% 
-  bold_p(t =.1) %>% 
-  modify_caption("**Table 2. Logistic Regression Model for Males**") 
+                 show_single_row = c("injured_weapon", "physical_fight", 
+                                     "hurt_partner", "is_hopeless", 
+                                     "forced_sexual", "consumed_alcohol", 
+                                     "consumed_chemical", "offered_drugs",
+                                     "used_hallucinogenic")) %>% 
+                bold_labels() %>% 
+                bold_p(t =.1) %>% 
+                modify_caption("**Table 2. Logistic Regression Model for Males**") 
 
 
 table_model_female <- 
   tbl_regression(model_girls, 
                  exponentiate = TRUE, 
-                 show_single_row = c("injured_weapon", "physical_fight", "hurt_partner", 
-                                     "is_hopeless", "forced_sexual", "consumed_alcohol", "consumed_chemical", "offered_drugs", "used_hallucinogenic")) %>% 
-  bold_labels() %>% 
-  bold_p(t =.1) %>% 
-  modify_caption("**Table 3. Logistic Regression Model for Females**") 
+                 show_single_row = c("injured_weapon", "physical_fight", 
+                                     "hurt_partner",  "is_hopeless", 
+                                     "forced_sexual", "consumed_alcohol", 
+                                     "consumed_chemical", "offered_drugs",
+                                     "used_hallucinogenic")) %>% 
+                bold_labels() %>% 
+                bold_p(t =.1) %>% 
+                modify_caption("**Table 3. Logistic Regression Model for Females**") 
 
 ```
 
