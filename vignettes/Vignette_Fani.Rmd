@@ -727,15 +727,18 @@ proportions_every_predictor_df <-
   group_by(Year) %>%
   summarise(
     propAttempts = survey_mean(suicide_attempts, na.rm = TRUE), 
-    prppAlcohol = survey_mean(consumed_alcohol, na.rm = TRUE), 
+    #prppAlcohol = survey_mean(consumed_alcohol, na.rm = TRUE), 
     propHopeless = survey_mean(is_hopeless, na.rm = TRUE),
     propSexAbuse = survey_mean(forced_sexual, na.rm = TRUE),
-    propDrug = survey_mean(offered_drugs, na.rm = TRUE),
+    #propDrug = survey_mean(offered_drugs, na.rm = TRUE),
     propWeapon = survey_mean(injured_weapon , na.rm = TRUE), 
     propFight = survey_mean(physical_fight   , na.rm = TRUE), 
     propPartner = survey_mean(hurt_partner, na.rm = TRUE), 
-    porpChemical = survey_mean(consumed_chemical, na.rm = TRUE), 
-    porpHallucinogenic = survey_mean(used_hallucinogenic, na.rm = TRUE),
+    #porpChemical = survey_mean(consumed_chemical, na.rm = TRUE), 
+    #porpHallucinogenic = survey_mean(used_hallucinogenic, na.rm = TRUE),
+     propSubstance = survey_mean(consumed_alcohol, na.rm = TRUE) 
+    + survey_mean(used_hallucinogenic, na.rm = TRUE) 
+    + survey_mean(consumed_chemical, na.rm = TRUE),
     .groups = "keep"
   )%>% 
   mutate(Year = as.character(Year)) %>% 
@@ -745,16 +748,17 @@ proportions_every_predictor <-
   proportions_every_predictor_df %>% 
   select(-contains("_se")) %>%
   filter(Year > 2003) %>% 
-  rename("Used Chemicals"      = porpChemical,  
-         "Used Hallucinogenic" = porpHallucinogenic, 
+  rename(#"Used Chemicals"      = porpChemical,  
+         #"Used Hallucinogenic" = porpHallucinogenic, 
          "Suicide Attempts"    = propAttempts,
-         "Used Drugs"          = propDrug, 
+         #"Used Drugs"          = propDrug, 
          "Physical Fights"     = propFight,
          "Feeling Hopeless"    = propHopeless,
          "Abused by partner"   = propPartner,
          "Sexually Abused"     = propSexAbuse,
          "Injured by a Weapon" = propWeapon, 
-         "Consumed Alcohol"    = prppAlcohol
+         #"Consumed Alcohol"    = prppAlcohol
+         "Substance Use" = propSubstance   
   ) %>% 
   pivot_longer(-Year) %>% 
   ggplot(.) +
