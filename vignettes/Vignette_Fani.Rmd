@@ -1,6 +1,6 @@
 
 ---
-title: "Risk Factors Associated with Suicide Attempts in U.S High School Students since 2005: A Replication Study"
+title: "Suicide Ideation in Adolescents: Risky Behaviors, Traumatic Events, and Hopelessness as Risk Factors"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Suicide Ideation in Adolescents: Risky Behaviors, Traumatic Events, and Hopelessness as Risk Factors}
