@@ -3,7 +3,7 @@
 # 08/09/2022
 
 # The aim of this data set importation is to make a trial of tidy models with
-# weigted data.
+# weighted data.
 
 # install.packages("haven")
 library(haven)
@@ -21,13 +21,13 @@ library(tidyverse)
 
 ### 2019 YRBS  ###
 raw_yrbs_2019 <- read_sav("inst/extData/2019_YRBS_data.dat.sav")
-saveRDS(yrbs_2019_raw, "inst/extData/yrbs_2019_raw.rda")
+saveRDS(raw_yrbs_2019, "inst/extData/yrbs_2019_raw.rda")
 usethis::use_data(raw_yrbs_2019, overwrite = TRUE)
 
 
 ### Cleaning variables ###
 clean_yrbs_2019 <-
-  yrbs_2019_raw %>%
+  raw_yrbs_2019 %>%
   mutate(ID = row_number()) %>%
   mutate(
     Sex = case_when(
@@ -389,7 +389,7 @@ clean_yrbs_2019 <-
     )
   ) %>% 
   select(- c(Q2, Q5, Q1, Q3, Q6, Q7, Q66, Q65, Q26,  Q27, Q28, Q29, Q8, Q31,
-             Q36, Q40, Q44, Q46, Q59, Q64, Q67, Q68, Q86, Q89, Q99, q6orig, 
+             Q36, Q40, Q44, Q46, Q59, Q64, Q68, Q86, Q89, Q99, q6orig, 
              q7orig, site, raceeth, bmipct),
          -starts_with("QN")
   ) %>% 
